@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ClientEditForm } from "./client-edit-form";
 
 export default async function ClientDetailPage({
@@ -26,12 +27,25 @@ export default async function ClientDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-      {linkedProfile && (
-        <p className="mt-1 text-sm text-gray-500">
-          Usuário vinculado: {linkedProfile.full_name ?? linkedProfile.id}
-        </p>
-      )}
+      <Breadcrumbs items={[
+        { label: "Clientes", href: "/admin/clients" },
+        { label: client.name },
+      ]} />
+
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
+          {client.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
+          {linkedProfile && (
+            <p className="text-sm text-gray-500">
+              Usuário: {linkedProfile.full_name ?? linkedProfile.id}
+            </p>
+          )}
+        </div>
+      </div>
+
       <ClientEditForm client={client} />
     </div>
   );

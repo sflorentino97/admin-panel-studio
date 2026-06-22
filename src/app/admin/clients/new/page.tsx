@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { createClientWithUser, type ActionState } from "../actions";
 
 export default function NewClientPage() {
@@ -12,6 +13,10 @@ export default function NewClientPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      <Breadcrumbs items={[
+        { label: "Clientes", href: "/admin/clients" },
+        { label: "Novo Cliente" },
+      ]} />
       <h1 className="text-2xl font-bold text-gray-900">Novo Cliente</h1>
 
       <form action={formAction} className="mt-6 space-y-4">
@@ -119,8 +124,9 @@ export default function NewClientPage() {
           <button
             type="submit"
             disabled={pending}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
+            {pending && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
             {pending ? "Cadastrando..." : "Cadastrar Cliente"}
           </button>
           <Link

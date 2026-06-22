@@ -14,6 +14,8 @@ export async function createRequest(
   const title = formData.get("title") as string;
   const description = (formData.get("description") as string) || null;
   const typeId = (formData.get("type_id") as string) || null;
+  const priority = Number(formData.get("priority")) || 0;
+  const dueDate = (formData.get("due_date") as string) || null;
 
   if (!clientId || !title) {
     return { error: "Cliente e título são obrigatórios." };
@@ -37,6 +39,8 @@ export async function createRequest(
     title,
     description,
     type_id: typeId || null,
+    priority,
+    due_date: dueDate || null,
     status: "queued",
     created_by: user.id,
   });
