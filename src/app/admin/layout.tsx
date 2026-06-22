@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AdminNav } from "@/components/admin-nav";
+import { Sidebar } from "@/components/sidebar";
 
 export default async function AdminLayout({
   children,
@@ -23,10 +23,15 @@ export default async function AdminLayout({
   if (profile?.role !== "admin") redirect("/");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav userName={profile.full_name ?? user.email ?? "Admin"} />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {children}
+    <div className="min-h-screen bg-[#f8f8f8]">
+      <Sidebar
+        userName={profile.full_name ?? user.email ?? "Admin"}
+        role="admin"
+      />
+      <main className="lg:pl-60">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </main>
     </div>
   );

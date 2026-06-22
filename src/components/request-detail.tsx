@@ -20,6 +20,9 @@ type Request = {
   due_date: string | null;
   client_name: string | null;
   type_name: string | null;
+  formats: string[] | null;
+  drive_link: string | null;
+  extra_info: string | null;
 };
 
 type Attachment = {
@@ -153,6 +156,43 @@ export function RequestDetail({
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
               {request.description}
             </p>
+          </div>
+        )}
+
+        {/* Formats */}
+        {request.formats && request.formats.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-medium text-gray-500 mb-2">Formatos</p>
+            <div className="flex flex-wrap gap-1.5">
+              {request.formats.map((f) => (
+                <span key={f} className="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Drive link & extra info */}
+        {(request.drive_link || request.extra_info) && (
+          <div className="mt-4 space-y-3">
+            {request.drive_link && (
+              <div>
+                <p className="text-xs font-medium text-gray-500">Material finalizado</p>
+                <a href={request.drive_link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-6.514a4.5 4.5 0 00-6.364 0l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                  </svg>
+                  Abrir no Drive
+                </a>
+              </div>
+            )}
+            {request.extra_info && (
+              <div>
+                <p className="text-xs font-medium text-gray-500">Informações complementares</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">{request.extra_info}</p>
+              </div>
+            )}
           </div>
         )}
 

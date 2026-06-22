@@ -20,7 +20,7 @@ export default async function ClientDashboard() {
   const { data: client } = clientId
     ? await supabase
         .from("clients")
-        .select("name, billing_day, monthly_request_limit, contract_path")
+        .select("name, billing_day, contract_path")
         .eq("id", clientId)
         .single()
     : { data: null };
@@ -33,16 +33,6 @@ export default async function ClientDashboard() {
         .order("created_at", { ascending: false })
     : { data: null };
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const { count: usedThisMonth } = clientId
-    ? await supabase
-        .from("requests")
-        .select("*", { count: "exact", head: true })
-        .eq("client_id", clientId)
-        .gte("created_at", monthStart)
-    : { count: 0 };
-
   const mappedRequests = requests?.map((r) => ({
     ...r,
     type_name: (r.request_types as unknown as { name: string } | null)?.name ?? undefined,
@@ -52,7 +42,6 @@ export default async function ClientDashboard() {
     <ClientDashboardView
       client={client}
       requests={mappedRequests}
-      usedThisMonth={usedThisMonth ?? 0}
     />
   );
 }

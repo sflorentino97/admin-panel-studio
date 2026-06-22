@@ -16,6 +16,9 @@ export async function createRequest(
   const typeId = (formData.get("type_id") as string) || null;
   const priority = Number(formData.get("priority")) || 0;
   const dueDate = (formData.get("due_date") as string) || null;
+  const formats = formData.getAll("formats") as string[];
+  const driveLink = (formData.get("drive_link") as string) || null;
+  const extraInfo = (formData.get("extra_info") as string) || null;
 
   if (!clientId || !title) {
     return { error: "Cliente e título são obrigatórios." };
@@ -41,6 +44,9 @@ export async function createRequest(
     type_id: typeId || null,
     priority,
     due_date: dueDate || null,
+    formats: formats.length > 0 ? formats : null,
+    drive_link: driveLink,
+    extra_info: extraInfo,
     status: "queued",
     created_by: user.id,
   });
