@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
 import { updateRequestStatus } from "./actions";
 
@@ -91,6 +92,7 @@ export function AdminRequestsView({
             requests={requests}
             onStatusChange={handleStatusChange}
             showClientName
+            linkPrefix="/admin/requests"
           />
         ) : (
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -120,8 +122,13 @@ export function AdminRequestsView({
                     };
                     return (
                       <tr key={req.id}>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                          {req.title}
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
+                          <Link
+                            href={`/admin/requests/${req.id}`}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {req.title}
+                          </Link>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                           {req.client_name ?? "-"}

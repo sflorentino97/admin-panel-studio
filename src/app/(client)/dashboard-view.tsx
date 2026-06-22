@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
 
 type ClientInfo = {
@@ -29,9 +30,17 @@ export function ClientDashboardView({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">
-        Olá{client ? `, ${client.name}` : ""}
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Olá{client ? `, ${client.name}` : ""}
+        </h1>
+        <Link
+          href="/requests/new"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Novo Pedido
+        </Link>
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -86,7 +95,7 @@ export function ClientDashboardView({
         {requests.length > 0 ? (
           <div className="mt-4">
             {view === "kanban" ? (
-              <KanbanBoard requests={requests} readOnly />
+              <KanbanBoard requests={requests} readOnly linkPrefix="/requests" />
             ) : (
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -111,8 +120,13 @@ export function ClientDashboardView({
                       };
                       return (
                         <tr key={req.id}>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                            {req.title}
+                          <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
+                            <Link
+                              href={`/requests/${req.id}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              {req.title}
+                            </Link>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <span

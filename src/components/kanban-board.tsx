@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type DragEvent } from "react";
+import Link from "next/link";
 
 export type KanbanRequest = {
   id: string;
@@ -44,11 +45,13 @@ export function KanbanBoard({
   onStatusChange,
   showClientName = false,
   readOnly = false,
+  linkPrefix,
 }: {
   requests: KanbanRequest[];
   onStatusChange?: (requestId: string, newStatus: string) => void;
   showClientName?: boolean;
   readOnly?: boolean;
+  linkPrefix?: string;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -117,9 +120,18 @@ export function KanbanBoard({
                     !readOnly ? "cursor-grab active:cursor-grabbing" : ""
                   } ${draggedId === req.id ? "opacity-50" : ""}`}
                 >
-                  <p className="text-sm font-medium text-gray-900">
-                    {req.title}
-                  </p>
+                  {linkPrefix ? (
+                    <Link
+                      href={`${linkPrefix}/${req.id}`}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      {req.title}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900">
+                      {req.title}
+                    </p>
+                  )}
                   {showClientName && req.client_name && (
                     <p className="mt-1 text-xs text-gray-500">
                       {req.client_name}
