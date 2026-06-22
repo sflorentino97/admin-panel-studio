@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ClientsPage() {
@@ -11,6 +12,12 @@ export default async function ClientsPage() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+        <Link
+          href="/admin/clients/new"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Novo Cliente
+        </Link>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -34,9 +41,14 @@ export default async function ClientsPage() {
           <tbody className="divide-y divide-gray-200">
             {clients && clients.length > 0 ? (
               clients.map((client) => (
-                <tr key={client.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                    {client.name}
+                <tr key={client.id} className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
+                    <Link
+                      href={`/admin/clients/${client.id}`}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      {client.name}
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {client.email}

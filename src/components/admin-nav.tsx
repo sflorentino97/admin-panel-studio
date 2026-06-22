@@ -29,7 +29,9 @@ export function AdminNav({ userName }: { userName: string }) {
               key={link.href}
               href={link.href}
               className={`text-sm font-medium ${
-                pathname === link.href
+                (link.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname.startsWith(link.href))
                   ? "text-blue-600"
                   : "text-gray-600 hover:text-gray-900"
               }`}
