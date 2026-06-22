@@ -48,29 +48,27 @@ type HistoryEntry = {
   changed_at: string;
 };
 
-const statusLabels: Record<string, { label: string; color: string; dot: string }> = {
-  queued: { label: "Na fila", color: "bg-gray-100 text-gray-700", dot: "bg-gray-400" },
-  in_progress: { label: "Em andamento", color: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
-  in_review: { label: "Em revisão", color: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500" },
-  done: { label: "Concluído", color: "bg-green-100 text-green-700", dot: "bg-green-500" },
-  cancelled: { label: "Cancelado", color: "bg-red-100 text-red-700", dot: "bg-red-500" },
+const statusLabels: Record<string, { label: string; dot: string }> = {
+  queued: { label: "Na fila", dot: "bg-gray-400" },
+  in_progress: { label: "Em andamento", dot: "bg-blue-500" },
+  in_review: { label: "Em revisão", dot: "bg-amber-500" },
+  done: { label: "Concluído", dot: "bg-emerald-500" },
+  cancelled: { label: "Cancelado", dot: "bg-red-400" },
 };
 
 const priorityLabels: Record<number, { label: string; color: string }> = {
   0: { label: "Normal", color: "text-gray-500" },
-  1: { label: "Média", color: "text-yellow-600" },
+  1: { label: "Média", color: "text-amber-600" },
   2: { label: "Alta", color: "text-orange-600" },
   3: { label: "Urgente", color: "text-red-600" },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = statusLabels[status] ?? {
-    label: status,
-    color: "bg-gray-100 text-gray-700",
-  };
+  const cfg = statusLabels[status] ?? { label: status, dot: "bg-gray-400" };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${cfg.color}`}>
-      {cfg.label}
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+      <span className="text-[12px] font-medium text-gray-600">{cfg.label}</span>
     </span>
   );
 }
@@ -79,7 +77,7 @@ function PriorityBadge({ priority }: { priority: number }) {
   const cfg = priorityLabels[priority] ?? priorityLabels[0];
   if (priority === 0) return null;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium ${cfg.color}`}>
+    <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${cfg.color}`}>
       <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v12.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2z" clipRule="evenodd" className="rotate-180 origin-center" />
       </svg>
@@ -114,19 +112,19 @@ export function RequestDetail({
       ];
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl animate-fade-in">
       <Breadcrumbs items={breadcrumbs} />
 
       {/* Header */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200/80 bg-white p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{request.title}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <h1 className="text-[22px] font-bold tracking-tight text-gray-900">{request.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2.5">
               <StatusBadge status={request.status} />
               <PriorityBadge priority={request.priority} />
               {request.client_name && (
-                <span className="inline-flex items-center gap-1 text-sm text-gray-500">
+                <span className="inline-flex items-center gap-1 text-[13px] text-gray-500">
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
                   </svg>
@@ -134,14 +132,14 @@ export function RequestDetail({
                 </span>
               )}
               {request.type_name && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
+                <span className="inline-flex items-center gap-1 rounded-md bg-brand-light px-2 py-0.5 text-[11px] font-medium text-brand">
                   {request.type_name}
                 </span>
               )}
             </div>
           </div>
           {request.due_date && (
-            <div className="flex items-center gap-1 rounded-md bg-gray-50 px-3 py-1.5 text-sm">
+            <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-2 text-[13px]">
               <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
@@ -150,22 +148,20 @@ export function RequestDetail({
           )}
         </div>
 
-        {/* Description */}
         {request.description && (
-          <div className="mt-4 rounded-md bg-gray-50 p-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+          <div className="mt-4 rounded-lg bg-gray-50 p-4">
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-gray-700">
               {request.description}
             </p>
           </div>
         )}
 
-        {/* Formats */}
         {request.formats && request.formats.length > 0 && (
           <div className="mt-4">
-            <p className="text-xs font-medium text-gray-500 mb-2">Formatos</p>
+            <p className="text-[12px] font-medium text-gray-500 mb-2">Formatos</p>
             <div className="flex flex-wrap gap-1.5">
               {request.formats.map((f) => (
-                <span key={f} className="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                <span key={f} className="inline-flex rounded-md bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-700">
                   {f}
                 </span>
               ))}
@@ -173,13 +169,12 @@ export function RequestDetail({
           </div>
         )}
 
-        {/* Drive link & extra info */}
         {(request.drive_link || request.extra_info) && (
           <div className="mt-4 space-y-3">
             {request.drive_link && (
               <div>
-                <p className="text-xs font-medium text-gray-500">Material finalizado</p>
-                <a href={request.drive_link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                <p className="text-[12px] font-medium text-gray-500">Material finalizado</p>
+                <a href={request.drive_link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-brand hover:text-brand-hover transition-colors">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-6.514a4.5 4.5 0 00-6.364 0l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
                   </svg>
@@ -189,22 +184,21 @@ export function RequestDetail({
             )}
             {request.extra_info && (
               <div>
-                <p className="text-xs font-medium text-gray-500">Informações complementares</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">{request.extra_info}</p>
+                <p className="text-[12px] font-medium text-gray-500">Informações complementares</p>
+                <p className="mt-1 whitespace-pre-wrap text-[13px] text-gray-700">{request.extra_info}</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Timestamps */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           <TimeBox label="Criado" date={request.created_at} icon="clock" />
           <TimeBox label="Iniciado" date={request.started_at} icon="play" />
           <TimeBox label="Concluído" date={request.completed_at} icon="check" />
           {request.started_at && request.completed_at && (
-            <div className="rounded-md bg-green-50 p-3">
-              <p className="text-xs font-medium text-green-600">Duração</p>
-              <p className="mt-1 text-sm font-semibold text-green-900">
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-[12px] font-medium text-emerald-600">Duração</p>
+              <p className="mt-1 text-[13px] font-semibold tabular-nums text-emerald-900">
                 {formatDuration(request.started_at, request.completed_at)}
               </p>
             </div>
@@ -261,8 +255,8 @@ function SectionHeader({ title, count, icon }: { title: string; count: number; i
   return (
     <div className="mb-3 flex items-center gap-2">
       <span className="text-gray-400">{icons[icon]}</span>
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+      <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
+      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium tabular-nums text-gray-600">
         {count}
       </span>
     </div>
@@ -289,13 +283,13 @@ function TimeBox({ label, date, icon }: { label: string; date: string | null; ic
   };
 
   return (
-    <div className="rounded-md bg-gray-50 p-3">
+    <div className="rounded-lg bg-gray-50 p-3">
       <div className="flex items-center gap-1">
         {iconMap[icon]}
-        <p className="text-xs font-medium text-gray-500">{label}</p>
+        <p className="text-[12px] font-medium text-gray-500">{label}</p>
       </div>
-      <p className="mt-1 text-sm font-semibold text-gray-900">
-        {date ? new Date(date).toLocaleDateString("pt-BR") : "-"}
+      <p className="mt-1 text-[13px] font-semibold tabular-nums text-gray-900">
+        {date ? new Date(date).toLocaleDateString("pt-BR") : "—"}
       </p>
     </div>
   );
@@ -303,7 +297,7 @@ function TimeBox({ label, date, icon }: { label: string; date: string | null; ic
 
 function StatusTimeline({ history }: { history: HistoryEntry[] }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-gray-200/80 bg-white">
       <div className="p-4">
         <div className="relative">
           <div className="absolute left-3 top-2 bottom-2 w-px bg-gray-200" />
@@ -312,7 +306,7 @@ function StatusTimeline({ history }: { history: HistoryEntry[] }) {
               const cfg = statusLabels[h.to_status] ?? { dot: "bg-gray-400" };
               return (
                 <div key={h.id} className="relative flex items-start gap-3 pl-0">
-                  <div className={`relative z-10 mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-4 ring-white ${cfg.dot} ${i === 0 ? "ring-2 ring-blue-100" : ""}`} style={{ marginLeft: "5px" }} />
+                  <div className={`relative z-10 mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-4 ring-white ${cfg.dot} ${i === 0 ? "ring-2 ring-brand-light" : ""}`} style={{ marginLeft: "5px" }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {h.from_status && (
@@ -325,7 +319,7 @@ function StatusTimeline({ history }: { history: HistoryEntry[] }) {
                       )}
                       <StatusBadge status={h.to_status} />
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-400">
+                    <p className="mt-0.5 text-[11px] tabular-nums text-gray-400">
                       {new Date(h.changed_at).toLocaleString("pt-BR")}
                     </p>
                   </div>
@@ -385,36 +379,36 @@ function AttachmentsList({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-gray-200/80 bg-white">
       {error && (
-        <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="border-b border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-700">
           {error}
         </div>
       )}
 
       {attachments.length > 0 ? (
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-gray-50">
           {attachments.map((att) => (
             <li
               key={att.id}
-              className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50"
+              className="flex items-center justify-between px-4 py-3 transition-colors duration-150 hover:bg-gray-50/60"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900">{att.filename}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="truncate text-[13px] font-medium text-gray-900">{att.filename}</p>
+                  <p className="text-[11px] tabular-nums text-gray-400">
                     {new Date(att.created_at).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => handleDownload(att.storage_path, att.filename)}
-                className="ml-3 flex-shrink-0 rounded-md px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50"
+                className="ml-3 flex-shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-medium text-brand transition-colors hover:bg-brand-light"
               >
                 Baixar
               </button>
@@ -422,11 +416,11 @@ function AttachmentsList({
           ))}
         </ul>
       ) : (
-        <p className="px-4 py-6 text-center text-sm text-gray-400">Nenhum anexo enviado.</p>
+        <p className="px-4 py-8 text-center text-[13px] text-gray-400">Nenhum anexo enviado.</p>
       )}
 
       <div className="border-t border-gray-100 px-4 py-3">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-[13px] font-medium text-gray-700 transition-all duration-150 hover:bg-gray-50 active:bg-gray-100">
           <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -472,50 +466,50 @@ function CommentsList({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-gray-200/80 bg-white">
       {error && (
-        <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="border-b border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-700">
           {error}
         </div>
       )}
 
       {comments.length > 0 ? (
-        <div className="divide-y divide-gray-100 p-4">
+        <div className="divide-y divide-gray-50 p-4">
           {comments.map((c) => (
             <div
               key={c.id}
-              className={`py-4 first:pt-0 last:pb-0`}
+              className="py-4 first:pt-0 last:pb-0"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${
                     c.author_role === "admin"
-                      ? "bg-blue-100 text-blue-700"
+                      ? "bg-gradient-to-br from-brand to-accent text-white"
                       : "bg-gray-100 text-gray-600"
                   }`}>
                     {c.author_name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-[13px] font-medium text-gray-900">
                     {c.author_name}
                   </span>
                   {c.author_role === "admin" && (
-                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="rounded-md bg-brand-light px-1.5 py-0.5 text-[10px] font-medium text-brand">
                       Studio
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-[11px] tabular-nums text-gray-400">
                   {new Date(c.created_at).toLocaleString("pt-BR")}
                 </span>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-700 pl-8">
+              <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-gray-700 pl-8">
                 {c.body}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="px-4 py-6 text-center text-sm text-gray-400">Nenhum comentário ainda.</p>
+        <p className="px-4 py-8 text-center text-[13px] text-gray-400">Nenhum comentário ainda.</p>
       )}
 
       <form onSubmit={handleSubmit} className="border-t border-gray-100 p-4">
@@ -524,13 +518,13 @@ function CommentsList({
           onChange={(e) => setBody(e.target.value)}
           placeholder="Escreva um comentário..."
           rows={3}
-          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10 resize-none"
         />
         <div className="mt-2 flex justify-end">
           <button
             type="submit"
             disabled={isPending || !body.trim()}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white transition-all duration-150 hover:bg-brand-hover active:bg-brand-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? "Enviando..." : "Enviar"}
           </button>

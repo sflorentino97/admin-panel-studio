@@ -1,1 +1,69 @@
 @import "tailwindcss";
+
+@theme {
+  --color-brand: #9B29FF;
+  --color-brand-hover: #8A1FEE;
+  --color-brand-active: #7A15DD;
+  --color-brand-light: #F3E8FF;
+  --color-brand-50: #FAF5FF;
+  --color-accent: #F15A24;
+  --color-accent-hover: #E04A14;
+  --color-lime: #A8E632;
+  --color-lime-light: #F0FCD4;
+  --color-sidebar: #111113;
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 200ms ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out;
+}
+
+.animate-shake {
+  animation: shake 400ms ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-left,
+  .animate-fade-in,
+  .animate-shake,
+  .animate-scale-in {
+    animation: none;
+  }
+  .animate-spin {
+    animation-duration: 3s;
+  }
+  .animate-pulse {
+    animation: none;
+    opacity: 0.6;
+  }
+}

@@ -26,20 +26,20 @@ export default async function ClientDetailPage({
     .maybeSingle();
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl animate-fade-in">
       <Breadcrumbs items={[
         { label: "Clientes", href: "/admin/clients" },
         { label: client.name },
       ]} />
 
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand to-accent text-lg font-bold text-white">
           {client.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
+          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">{client.name}</h1>
           {linkedProfile && (
-            <p className="text-sm text-gray-500">
+            <p className="text-[13px] text-gray-500">
               Usuário: {linkedProfile.full_name ?? linkedProfile.id}
             </p>
           )}

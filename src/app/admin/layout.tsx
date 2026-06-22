@@ -23,12 +23,12 @@ export default async function AdminLayout({
   if (profile?.role !== "admin") redirect("/");
 
   return (
-    <div className="min-h-screen bg-[#f8f8f8]">
+    <div className="min-h-dvh bg-[#f8f8f8]">
       <Sidebar
         userName={profile.full_name ?? user.email ?? "Admin"}
         role="admin"
       />
-      <main className="lg:pl-60">
+      <main className="lg:pl-[248px]">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </div>

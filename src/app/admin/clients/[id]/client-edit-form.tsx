@@ -24,123 +24,129 @@ export function ClientEditForm({ client }: { client: Client }) {
 
   return (
   <>
-    <form action={formAction} className="mt-6 space-y-4">
+    <form action={formAction} className="mt-8 space-y-5">
       <input type="hidden" name="client_id" value={client.id} />
 
       {state?.error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <div role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-700 animate-shake">
+          <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
           {state.error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Nome *
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            defaultValue={client.name}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
+      <fieldset className="rounded-xl border border-gray-200/80 bg-white p-5">
+        <legend className="px-2 text-[13px] font-semibold text-gray-900">Dados do cliente</legend>
+        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="name" className="block text-[13px] font-medium text-gray-600">
+              Nome <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              defaultValue={client.name}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            E-mail
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={client.email}
-            disabled
-            className="mt-1 block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="email" className="block text-[13px] font-medium text-gray-600">
+              E-mail
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={client.email}
+              disabled
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-[13px] text-gray-500"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-            Telefone
-          </label>
-          <input
-            id="phone"
-            name="phone"
-            type="text"
-            defaultValue={client.phone ?? ""}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="phone" className="block text-[13px] font-medium text-gray-600">
+              Telefone
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="text"
+              defaultValue={client.phone ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="billing_day" className="block text-sm font-medium text-gray-700">
-            Dia de cobrança
-          </label>
-          <input
-            id="billing_day"
-            name="billing_day"
-            type="number"
-            min={1}
-            max={31}
-            defaultValue={client.billing_day ?? ""}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="billing_day" className="block text-[13px] font-medium text-gray-600">
+              Dia de cobrança
+            </label>
+            <input
+              id="billing_day"
+              name="billing_day"
+              type="number"
+              min={1}
+              max={31}
+              defaultValue={client.billing_day ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="monthly_request_limit" className="block text-sm font-medium text-gray-700">
-            Limite mensal de pedidos
-          </label>
-          <input
-            id="monthly_request_limit"
-            name="monthly_request_limit"
-            type="number"
-            min={1}
-            defaultValue={client.monthly_request_limit}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="monthly_request_limit" className="block text-[13px] font-medium text-gray-600">
+              Limite mensal de pedidos
+            </label>
+            <input
+              id="monthly_request_limit"
+              name="monthly_request_limit"
+              type="number"
+              min={1}
+              defaultValue={client.monthly_request_limit}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 pt-6">
-          <input
-            id="is_active"
-            name="is_active"
-            type="checkbox"
-            defaultChecked={client.is_active}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-            Cliente ativo
-          </label>
+          <div className="flex items-center gap-2.5 pt-6">
+            <input
+              id="is_active"
+              name="is_active"
+              type="checkbox"
+              defaultChecked={client.is_active}
+              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand/30"
+            />
+            <label htmlFor="is_active" className="text-[13px] font-medium text-gray-700">
+              Cliente ativo
+            </label>
+          </div>
         </div>
-      </div>
+      </fieldset>
 
-      <div>
-        <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-          Observações
-        </label>
+      <fieldset className="rounded-xl border border-gray-200/80 bg-white p-5">
+        <legend className="px-2 text-[13px] font-semibold text-gray-900">Observações</legend>
         <textarea
           id="notes"
           name="notes"
           rows={3}
           defaultValue={client.notes ?? ""}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Notas internas sobre o cliente..."
+          className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] leading-relaxed transition-all duration-150 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10 resize-none"
         />
-      </div>
+      </fieldset>
 
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-brand-hover hover:shadow active:bg-brand-active active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
+          {pending && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
           {pending ? "Salvando..." : "Salvar Alterações"}
         </button>
         <Link
           href="/admin/clients"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-700"
         >
           Voltar
         </Link>
@@ -180,16 +186,16 @@ function ContractSection({ clientId, contractPath }: { clientId: string; contrac
   }
 
   return (
-    <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900">Contrato</h2>
+    <div className="mt-8 rounded-xl border border-gray-200/80 bg-white p-5">
+      <h2 className="text-[15px] font-semibold text-gray-900">Contrato</h2>
 
       {currentPath && (
         <div className="mt-3 flex items-center gap-3">
-          <span className="text-sm text-gray-600">Contrato enviado</span>
+          <span className="text-[13px] text-gray-600">Contrato enviado</span>
           <button
             type="button"
             onClick={handleDownload}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="text-[13px] font-medium text-brand hover:text-brand-hover transition-colors"
           >
             Baixar
           </button>
@@ -198,7 +204,7 @@ function ContractSection({ clientId, contractPath }: { clientId: string; contrac
 
       <form onSubmit={handleUpload} className="mt-4 flex items-end gap-3">
         <div className="flex-1">
-          <label htmlFor="contract-file" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="contract-file" className="block text-[13px] font-medium text-gray-600">
             {currentPath ? "Substituir contrato" : "Enviar contrato"}
           </label>
           <input
@@ -207,20 +213,20 @@ function ContractSection({ clientId, contractPath }: { clientId: string; contrac
             type="file"
             accept=".pdf,.doc,.docx"
             required
-            className="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+            className="mt-1.5 block w-full text-[13px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-light file:px-3 file:py-2 file:text-[13px] file:font-medium file:text-brand hover:file:bg-brand-50"
           />
         </div>
         <button
           type="submit"
           disabled={uploading}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-brand-hover active:bg-brand-active disabled:opacity-50"
         >
           {uploading ? "Enviando..." : "Enviar"}
         </button>
       </form>
 
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p role="alert" className="mt-2 text-[13px] text-red-600">{error}</p>
       )}
     </div>
   );

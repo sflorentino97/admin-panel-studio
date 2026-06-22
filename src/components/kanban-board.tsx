@@ -19,27 +19,26 @@ export type KanbanRequest = {
 type Column = {
   key: string;
   label: string;
-  color: string;
-  bgColor: string;
+  dot: string;
 };
 
 const columns: Column[] = [
-  { key: "queued", label: "Na fila", color: "border-t-gray-400", bgColor: "bg-gray-50" },
-  { key: "in_progress", label: "Em andamento", color: "border-t-blue-500", bgColor: "bg-blue-50/30" },
-  { key: "in_review", label: "Em revisão", color: "border-t-yellow-500", bgColor: "bg-yellow-50/30" },
-  { key: "done", label: "Concluído", color: "border-t-green-500", bgColor: "bg-green-50/30" },
+  { key: "queued", label: "Na fila", dot: "bg-gray-400" },
+  { key: "in_progress", label: "Em andamento", dot: "bg-blue-500" },
+  { key: "in_review", label: "Em revisão", dot: "bg-amber-500" },
+  { key: "done", label: "Concluído", dot: "bg-emerald-500" },
 ];
 
 const priorityConfig: Record<number, { border: string; indicator: string; label: string }> = {
   0: { border: "", indicator: "", label: "" },
-  1: { border: "border-l-yellow-400", indicator: "bg-yellow-400", label: "Média" },
-  2: { border: "border-l-orange-400", indicator: "bg-orange-400", label: "Alta" },
+  1: { border: "border-l-amber-400", indicator: "bg-amber-400", label: "Média" },
+  2: { border: "border-l-orange-500", indicator: "bg-orange-500", label: "Alta" },
   3: { border: "border-l-red-500", indicator: "bg-red-500", label: "Urgente" },
 };
 
 function formatDate(date: string | null) {
   if (!date) return null;
-  return new Date(date).toLocaleDateString("pt-BR");
+  return new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
 function formatDuration(start: string | null, end: string | null) {
@@ -105,7 +104,7 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {columns.map((col) => {
         const items = requests.filter((r) => r.status === col.key);
         const isOver = dragOverColumn === col.key;
@@ -113,23 +112,24 @@ export function KanbanBoard({
         return (
           <div
             key={col.key}
-            className={`rounded-lg border-t-4 ${col.bgColor} p-3 ${col.color} transition-all ${
-              isOver ? "ring-2 ring-blue-300 bg-blue-50/50" : ""
+            className={`rounded-xl bg-gray-50/80 p-2.5 transition-all duration-200 ${
+              isOver ? "ring-2 ring-brand/30 bg-brand-50/40" : ""
             }`}
             onDragOver={!readOnly ? (e) => handleDragOver(e, col.key) : undefined}
             onDragLeave={!readOnly ? handleDragLeave : undefined}
             onDrop={!readOnly ? (e) => handleDrop(e, col.key) : undefined}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700">
+            <div className="mb-2.5 flex items-center gap-2 px-1.5">
+              <span className={`h-2 w-2 rounded-full ${col.dot}`} />
+              <h3 className="text-[13px] font-semibold text-gray-700">
                 {col.label}
               </h3>
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-200/80 px-1.5 text-xs font-medium text-gray-600">
+              <span className="ml-auto text-[12px] font-medium tabular-nums text-gray-400">
                 {items.length}
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {items.map((req) => {
                 const priority = req.priority ?? 0;
                 const pCfg = priorityConfig[priority] ?? priorityConfig[0];
@@ -142,68 +142,64 @@ export function KanbanBoard({
                     onDragStart={
                       !readOnly ? (e) => handleDragStart(e, req.id) : undefined
                     }
-                    className={`rounded-md border bg-white shadow-sm transition-all ${
-                      priority > 0 ? `border-l-2 ${pCfg.border}` : "border-gray-200"
+                    className={`group rounded-lg border bg-white transition-all duration-150 ${
+                      priority > 0 ? `border-l-2 ${pCfg.border} border-y-gray-200/80 border-r-gray-200/80` : "border-gray-200/80"
                     } ${
-                      !readOnly ? "cursor-grab hover:shadow-md active:cursor-grabbing" : ""
-                    } ${draggedId === req.id ? "opacity-40 scale-95" : ""}`}
+                      !readOnly ? "cursor-grab hover:shadow-md hover:-translate-y-px active:cursor-grabbing active:shadow-sm active:translate-y-0" : "hover:shadow-sm"
+                    } ${draggedId === req.id ? "opacity-30 scale-95 rotate-1" : ""}`}
                   >
                     <div className="p-3">
                       {linkPrefix ? (
                         <Link
                           href={`${linkPrefix}/${req.id}`}
-                          className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                          className="text-[13px] font-medium leading-snug text-gray-900 transition-colors hover:text-brand"
                         >
                           {req.title}
                         </Link>
                       ) : (
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-[13px] font-medium leading-snug text-gray-900">
                           {req.title}
                         </p>
                       )}
 
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {showClientName && req.client_name && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-                            </svg>
-                            {req.client_name}
-                          </span>
-                        )}
-                        {req.type_name && (
-                          <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-600">
-                            {req.type_name}
-                          </span>
-                        )}
-                        {priority > 0 && (
-                          <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-                            priority === 3 ? "text-red-600" : priority === 2 ? "text-orange-600" : "text-yellow-600"
-                          }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${pCfg.indicator}`} />
-                            {pCfg.label}
-                          </span>
-                        )}
-                      </div>
+                      {(showClientName && req.client_name || req.type_name || priority > 0) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {showClientName && req.client_name && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
+                              {req.client_name}
+                            </span>
+                          )}
+                          {req.type_name && (
+                            <span className="rounded-md bg-purple-50 px-1.5 py-0.5 text-[11px] font-medium text-purple-600">
+                              {req.type_name}
+                            </span>
+                          )}
+                          {priority > 0 && (
+                            <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                              priority === 3 ? "text-red-600" : priority === 2 ? "text-orange-600" : "text-amber-600"
+                            }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${pCfg.indicator}`} />
+                              {pCfg.label}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
                         <span>{formatDate(req.created_at)}</span>
-                        {req.started_at && col.key !== "queued" && (
-                          <span>Início: {formatDate(req.started_at)}</span>
-                        )}
                         {req.completed_at && col.key === "done" && (
-                          <span className="text-green-600 font-medium">
+                          <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-600 font-medium">
                             {formatDuration(req.started_at, req.completed_at)}
                           </span>
                         )}
                         {dueStatus && req.due_date && (
-                          <span className={`inline-flex items-center gap-1 font-medium ${
-                            dueStatus === "overdue" ? "text-red-600" : "text-orange-500"
+                          <span className={`inline-flex items-center gap-0.5 font-medium ${
+                            dueStatus === "overdue" ? "text-red-500" : "text-amber-500"
                           }`}>
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            {dueStatus === "overdue" ? "Atrasado" : `Prazo: ${formatDate(req.due_date)}`}
+                            {dueStatus === "overdue" ? "Atrasado" : formatDate(req.due_date)}
                           </span>
                         )}
                       </div>
@@ -212,11 +208,8 @@ export function KanbanBoard({
                 );
               })}
               {items.length === 0 && (
-                <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-gray-200 py-6 text-gray-400">
-                  <svg className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                  </svg>
-                  <p className="text-xs">Vazio</p>
+                <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-200/80 py-8 text-gray-300">
+                  <p className="text-[12px] font-medium">Nenhuma tarefa</p>
                 </div>
               )}
             </div>
