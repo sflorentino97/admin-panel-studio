@@ -20,7 +20,7 @@ export default async function ClientDashboard() {
   const { data: client } = clientId
     ? await supabase
         .from("clients")
-        .select("name, billing_day, monthly_request_limit")
+        .select("name, billing_day, monthly_request_limit, contract_path")
         .eq("id", clientId)
         .single()
     : { data: null };

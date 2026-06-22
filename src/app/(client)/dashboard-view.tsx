@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
+import { getMyContractUrl } from "./actions";
 
 type ClientInfo = {
   name: string;
   billing_day: number | null;
   monthly_request_limit: number;
+  contract_path: string | null;
 } | null;
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -42,7 +44,7 @@ export function ClientDashboardView({
         </Link>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Pedido ativo</p>
           <p className="mt-2 text-lg font-semibold text-gray-900">
@@ -63,6 +65,8 @@ export function ClientDashboardView({
             {client?.billing_day ? `Dia ${client.billing_day}` : "Não definido"}
           </p>
         </div>
+
+        <ContractCard hasContract={!!client?.contract_path} />
       </div>
 
       <div className="mt-8">
@@ -154,6 +158,34 @@ export function ClientDashboardView({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function ContractCard({ hasContract }: { hasContract: boolean }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDownload() {
+    setLoading(true);
+    const url = await getMyContractUrl();
+    setLoading(false);
+    if (url) window.open(url, "_blank");
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-medium text-gray-500">Contrato</p>
+      {hasContract ? (
+        <button
+          onClick={handleDownload}
+          disabled={loading}
+          className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+        >
+          {loading ? "Gerando link..." : "Baixar contrato"}
+        </button>
+      ) : (
+        <p className="mt-2 text-sm text-gray-400">Não disponível</p>
+      )}
     </div>
   );
 }

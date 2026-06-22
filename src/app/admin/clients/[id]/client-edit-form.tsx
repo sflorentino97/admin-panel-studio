@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { updateClient, type ActionState } from "../actions";
+import { updateClient, uploadContract, getContractUrl, type ActionState } from "../actions";
 
 type Client = {
   id: string;
@@ -13,6 +13,7 @@ type Client = {
   monthly_request_limit: number;
   is_active: boolean;
   notes: string | null;
+  contract_path: string | null;
 };
 
 export function ClientEditForm({ client }: { client: Client }) {
@@ -22,6 +23,7 @@ export function ClientEditForm({ client }: { client: Client }) {
   );
 
   return (
+  <>
     <form action={formAction} className="mt-6 space-y-4">
       <input type="hidden" name="client_id" value={client.id} />
 
@@ -144,5 +146,82 @@ export function ClientEditForm({ client }: { client: Client }) {
         </Link>
       </div>
     </form>
+
+    <ContractSection clientId={client.id} contractPath={client.contract_path} />
+  </>
+  );
+}
+
+function ContractSection({ clientId, contractPath }: { clientId: string; contractPath: string | null }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPath, setCurrentPath] = useState(contractPath);
+
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setUploading(true);
+    const formData = new FormData(e.currentTarget);
+    const result = await uploadContract(clientId, formData);
+    setUploading(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      const file = formData.get("file") as File;
+      const ext = file.name.split(".").pop() ?? "pdf";
+      setCurrentPath(`${clientId}/contrato.${ext}`);
+    }
+  }
+
+  async function handleDownload() {
+    if (!currentPath) return;
+    const url = await getContractUrl(currentPath);
+    if (url) window.open(url, "_blank");
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900">Contrato</h2>
+
+      {currentPath && (
+        <div className="mt-3 flex items-center gap-3">
+          <span className="text-sm text-gray-600">Contrato enviado</span>
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            Baixar
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleUpload} className="mt-4 flex items-end gap-3">
+        <div className="flex-1">
+          <label htmlFor="contract-file" className="block text-sm font-medium text-gray-700">
+            {currentPath ? "Substituir contrato" : "Enviar contrato"}
+          </label>
+          <input
+            id="contract-file"
+            name="file"
+            type="file"
+            accept=".pdf,.doc,.docx"
+            required
+            className="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={uploading}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {uploading ? "Enviando..." : "Enviar"}
+        </button>
+      </form>
+
+      {error && (
+        <p className="mt-2 text-sm text-red-600">{error}</p>
+      )}
+    </div>
   );
 }

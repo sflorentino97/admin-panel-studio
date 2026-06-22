@@ -156,3 +156,51 @@ export async function updateClient(
   revalidatePath(`/admin/clients/${clientId}`);
   redirect(`/admin/clients/${clientId}`);
 }
+
+export async function uploadContract(clientId: string, formData: FormData) {
+  const file = formData.get("file") as File | null;
+  if (!file) return { error: "Nenhum arquivo selecionado." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Não autenticado." };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") return { error: "Acesso negado." };
+
+  const ext = file.name.split(".").pop() ?? "pdf";
+  const storagePath = `${clientId}/contrato.${ext}`;
+
+  // Sobrescrever se já existir
+  await supabase.storage.from("contracts").remove([storagePath]);
+
+  const { error: uploadError } = await supabase.storage
+    .from("contracts")
+    .upload(storagePath, file);
+
+  if (uploadError) return { error: `Erro no upload: ${uploadError.message}` };
+
+  const { error: dbError } = await supabase
+    .from("clients")
+    .update({ contract_path: storagePath, updated_at: new Date().toISOString() })
+    .eq("id", clientId);
+
+  if (dbError) return { error: dbError.message };
+
+  revalidatePath(`/admin/clients/${clientId}`);
+  return {};
+}
+
+export async function getContractUrl(storagePath: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.storage
+    .from("contracts")
+    .createSignedUrl(storagePath, 60 * 5);
+  return data?.signedUrl ?? null;
+}
