@@ -52,6 +52,13 @@ export function AdminRequestsView({
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Demandas</h1>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/requests/new"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Nova Demanda
+          </Link>
         <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-0.5">
           <button
             onClick={() => setView("kanban")}
@@ -73,6 +80,7 @@ export function AdminRequestsView({
           >
             Lista
           </button>
+        </div>
         </div>
       </div>
 
