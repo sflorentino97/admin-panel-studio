@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
+import type { RequestStatus } from "@/lib/types";
 import { getMyContractUrl } from "./actions";
 
 type ClientInfo = {
@@ -11,24 +12,18 @@ type ClientInfo = {
   contract_path: string | null;
 } | null;
 
-const statusLabels: Record<string, { label: string; dot: string }> = {
-  queued: { label: "Na fila", dot: "bg-gray-400" },
-  in_progress: { label: "Em andamento", dot: "bg-blue-500" },
-  in_review: { label: "Em revisão", dot: "bg-amber-500" },
-  done: { label: "Concluído", dot: "bg-emerald-500" },
-  cancelled: { label: "Cancelado", dot: "bg-red-400" },
-};
-
 export function ClientDashboardView({
   client,
   requests,
+  statuses,
 }: {
   client: ClientInfo;
   requests: KanbanRequest[];
+  statuses: RequestStatus[];
 }) {
   const [view, setView] = useState<"kanban" | "list">("kanban");
-  const activeRequest = requests.find((r) => r.status === "in_progress");
-  const doneCount = requests.filter((r) => r.status === "done").length;
+  const activeRequest = requests.find((r) => r.status_category === "active");
+  const doneCount = requests.filter((r) => r.status_category === "done").length;
 
   return (
     <div className="animate-fade-in">
@@ -118,7 +113,7 @@ export function ClientDashboardView({
         {requests.length > 0 ? (
           <div className="mt-4">
             {view === "kanban" ? (
-              <KanbanBoard requests={requests} readOnly linkPrefix="/requests" />
+              <KanbanBoard requests={requests} statuses={statuses} readOnly linkPrefix="/requests" />
             ) : (
               <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white">
                 <div className="overflow-x-auto">
@@ -131,25 +126,22 @@ export function ClientDashboardView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {requests.map((req) => {
-                        const cfg = statusLabels[req.status] ?? { label: req.status, dot: "bg-gray-400" };
-                        return (
-                          <tr key={req.id} className="transition-colors duration-150 hover:bg-gray-50/60">
-                            <td className="whitespace-nowrap px-4 py-3 text-[13px] font-medium">
-                              <Link href={`/requests/${req.id}`} className="text-gray-900 hover:text-brand transition-colors">{req.title}</Link>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3">
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                                <span className="text-[12px] font-medium text-gray-600">{cfg.label}</span>
-                              </span>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-400">
-                              {new Date(req.created_at).toLocaleDateString("pt-BR")}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {requests.map((req) => (
+                        <tr key={req.id} className="transition-colors duration-150 hover:bg-gray-50/60">
+                          <td className="whitespace-nowrap px-4 py-3 text-[13px] font-medium">
+                            <Link href={`/requests/${req.id}`} className="text-gray-900 hover:text-brand transition-colors">{req.title}</Link>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: req.status_color }} />
+                              <span className="text-[12px] font-medium text-gray-600">{req.status_name}</span>
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-400">
+                            {new Date(req.created_at).toLocaleDateString("pt-BR")}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

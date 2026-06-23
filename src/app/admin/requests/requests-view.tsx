@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
+import type { RequestStatus } from "@/lib/types";
 import { updateRequestStatus } from "./actions";
 
 type RequestItem = KanbanRequest & {
@@ -10,14 +11,6 @@ type RequestItem = KanbanRequest & {
   due_date?: string | null;
   client_id?: string;
   type_name?: string;
-};
-
-const statusLabels: Record<string, { label: string; dot: string }> = {
-  queued: { label: "Na fila", dot: "bg-gray-400" },
-  in_progress: { label: "Em andamento", dot: "bg-blue-500" },
-  in_review: { label: "Em revisão", dot: "bg-amber-500" },
-  done: { label: "Concluído", dot: "bg-emerald-500" },
-  cancelled: { label: "Cancelado", dot: "bg-red-400" },
 };
 
 const priorityLabels: Record<number, { label: string; color: string }> = {
@@ -30,9 +23,11 @@ const priorityLabels: Record<number, { label: string; color: string }> = {
 export function AdminRequestsView({
   requests: initialRequests,
   clients,
+  statuses,
 }: {
   requests: RequestItem[];
   clients: { id: string; name: string }[];
+  statuses: RequestStatus[];
 }) {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [requests, setRequests] = useState(initialRequests);
@@ -43,22 +38,33 @@ export function AdminRequestsView({
   const [filterStatus, setFilterStatus] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  function handleStatusChange(requestId: string, newStatus: string) {
+  function handleStatusChange(requestId: string, newStatusId: string) {
     setError(null);
+    const targetStatus = statuses.find((s) => s.id === newStatusId);
     setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r))
+      prev.map((r) =>
+        r.id === requestId
+          ? {
+              ...r,
+              status_id: newStatusId,
+              status_name: targetStatus?.name ?? r.status_name,
+              status_color: targetStatus?.color ?? r.status_color,
+              status_category: targetStatus?.category ?? r.status_category,
+            }
+          : r
+      )
     );
 
     startTransition(async () => {
-      const result = await updateRequestStatus(requestId, newStatus);
+      const result = await updateRequestStatus(requestId, newStatusId);
       if (result.error) {
         setError(result.error);
         setRequests((prev) =>
-          prev.map((r) =>
-            r.id === requestId
-              ? { ...r, status: initialRequests.find((ir) => ir.id === requestId)?.status ?? r.status }
-              : r
-          )
+          prev.map((r) => {
+            if (r.id !== requestId) return r;
+            const orig = initialRequests.find((ir) => ir.id === requestId);
+            return orig ?? r;
+          })
         );
       }
     });
@@ -66,7 +72,7 @@ export function AdminRequestsView({
 
   const filtered = requests.filter((r) => {
     if (filterClient && r.client_id !== filterClient) return false;
-    if (filterStatus && r.status !== filterStatus) return false;
+    if (filterStatus && r.status_id !== filterStatus) return false;
     if (searchQuery && !r.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
@@ -161,8 +167,8 @@ export function AdminRequestsView({
           className="rounded-lg border border-gray-200/80 bg-white px-3 py-2 text-[13px] text-gray-700 transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
         >
           <option value="">Todos os status</option>
-          {Object.entries(statusLabels).map(([key, { label }]) => (
-            <option key={key} value={key}>{label}</option>
+          {statuses.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
         {hasFilters && (
@@ -212,6 +218,7 @@ export function AdminRequestsView({
         ) : view === "kanban" ? (
           <KanbanBoard
             requests={filtered}
+            statuses={statuses}
             onStatusChange={handleStatusChange}
             showClientName
             linkPrefix="/admin/requests"
@@ -232,7 +239,6 @@ export function AdminRequestsView({
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filtered.map((req) => {
-                    const sCfg = statusLabels[req.status] ?? { label: req.status, dot: "bg-gray-400" };
                     const pCfg = priorityLabels[req.priority] ?? priorityLabels[0];
                     return (
                       <tr key={req.id} className="transition-colors duration-150 hover:bg-gray-50/60">
@@ -246,8 +252,8 @@ export function AdminRequestsView({
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
                           <span className="inline-flex items-center gap-1.5">
-                            <span className={`h-1.5 w-1.5 rounded-full ${sCfg.dot}`} />
-                            <span className="text-[12px] font-medium text-gray-600">{sCfg.label}</span>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: req.status_color }} />
+                            <span className="text-[12px] font-medium text-gray-600">{req.status_name}</span>
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 hidden sm:table-cell">

@@ -2,11 +2,15 @@
 
 import { useState, type DragEvent } from "react";
 import Link from "next/link";
+import type { RequestStatus } from "@/lib/types";
 
 export type KanbanRequest = {
   id: string;
   title: string;
-  status: string;
+  status_id: string;
+  status_name: string;
+  status_color: string;
+  status_category: string;
   priority?: number;
   created_at: string;
   started_at: string | null;
@@ -15,19 +19,6 @@ export type KanbanRequest = {
   client_name?: string;
   type_name?: string;
 };
-
-type Column = {
-  key: string;
-  label: string;
-  dot: string;
-};
-
-const columns: Column[] = [
-  { key: "queued", label: "Na fila", dot: "bg-gray-400" },
-  { key: "in_progress", label: "Em andamento", dot: "bg-blue-500" },
-  { key: "in_review", label: "Em revisão", dot: "bg-amber-500" },
-  { key: "done", label: "Concluído", dot: "bg-emerald-500" },
-];
 
 const priorityConfig: Record<number, { border: string; indicator: string; label: string }> = {
   0: { border: "", indicator: "", label: "" },
@@ -62,13 +53,15 @@ function isDueSoon(dueDate: string | null | undefined): "overdue" | "soon" | nul
 
 export function KanbanBoard({
   requests,
+  statuses,
   onStatusChange,
   showClientName = false,
   readOnly = false,
   linkPrefix,
 }: {
   requests: KanbanRequest[];
-  onStatusChange?: (requestId: string, newStatus: string) => void;
+  statuses: RequestStatus[];
+  onStatusChange?: (requestId: string, newStatusId: string) => void;
   showClientName?: boolean;
   readOnly?: boolean;
   linkPrefix?: string;
@@ -76,56 +69,57 @@ export function KanbanBoard({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
+  const visibleStatuses = statuses.filter(s => s.is_active && s.category !== "cancelled");
+
   function handleDragStart(e: DragEvent, id: string) {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = "move";
   }
 
-  function handleDragOver(e: DragEvent, columnKey: string) {
+  function handleDragOver(e: DragEvent, statusId: string) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    setDragOverColumn(columnKey);
+    setDragOverColumn(statusId);
   }
 
   function handleDragLeave() {
     setDragOverColumn(null);
   }
 
-  function handleDrop(e: DragEvent, columnKey: string) {
+  function handleDrop(e: DragEvent, statusId: string) {
     e.preventDefault();
     setDragOverColumn(null);
     if (draggedId && onStatusChange) {
       const req = requests.find((r) => r.id === draggedId);
-      if (req && req.status !== columnKey) {
-        onStatusChange(draggedId, columnKey);
+      if (req && req.status_id !== statusId) {
+        onStatusChange(draggedId, statusId);
       }
     }
     setDraggedId(null);
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {columns.map((col) => {
-        const items = requests.filter((r) => r.status === col.key);
-        const isOver = dragOverColumn === col.key;
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" style={{ gridTemplateColumns: `repeat(${Math.min(visibleStatuses.length, 4)}, minmax(0, 1fr))` }}>
+      {visibleStatuses.map((col) => {
+        const items = requests.filter((r) => r.status_id === col.id);
+        const isOver = dragOverColumn === col.id;
 
         return (
           <div
-            key={col.key}
+            key={col.id}
             className={`rounded-xl bg-gray-50/80 p-2.5 transition-all duration-200 ${
               isOver ? "ring-2 ring-brand/30 bg-brand-50/40" : ""
             }`}
-            onDragOver={!readOnly ? (e) => handleDragOver(e, col.key) : undefined}
+            onDragOver={!readOnly ? (e) => handleDragOver(e, col.id) : undefined}
             onDragLeave={!readOnly ? handleDragLeave : undefined}
-            onDrop={!readOnly ? (e) => handleDrop(e, col.key) : undefined}
+            onDrop={!readOnly ? (e) => handleDrop(e, col.id) : undefined}
           >
             <div className="mb-2.5 flex items-center gap-2 px-1.5">
-              <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-              <h3 className="text-[13px] font-semibold text-gray-700">
-                {col.label}
-              </h3>
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: col.color }} />
+              <h3 className="text-[13px] font-semibold text-gray-700">{col.name}</h3>
               <span className="ml-auto text-[12px] font-medium tabular-nums text-gray-400">
                 {items.length}
+                {col.wip_limit ? `/${col.wip_limit}` : ""}
               </span>
             </div>
 
@@ -133,15 +127,13 @@ export function KanbanBoard({
               {items.map((req) => {
                 const priority = req.priority ?? 0;
                 const pCfg = priorityConfig[priority] ?? priorityConfig[0];
-                const dueStatus = req.status !== "done" ? isDueSoon(req.due_date) : null;
+                const dueStatus = req.status_category !== "done" ? isDueSoon(req.due_date) : null;
 
                 return (
                   <div
                     key={req.id}
                     draggable={!readOnly}
-                    onDragStart={
-                      !readOnly ? (e) => handleDragStart(e, req.id) : undefined
-                    }
+                    onDragStart={!readOnly ? (e) => handleDragStart(e, req.id) : undefined}
                     className={`group rounded-lg border bg-white transition-all duration-150 ${
                       priority > 0 ? `border-l-2 ${pCfg.border} border-y-gray-200/80 border-r-gray-200/80` : "border-gray-200/80"
                     } ${
@@ -157,9 +149,7 @@ export function KanbanBoard({
                           {req.title}
                         </Link>
                       ) : (
-                        <p className="text-[13px] font-medium leading-snug text-gray-900">
-                          {req.title}
-                        </p>
+                        <p className="text-[13px] font-medium leading-snug text-gray-900">{req.title}</p>
                       )}
 
                       {(showClientName && req.client_name || req.type_name || priority > 0) && (
@@ -187,7 +177,7 @@ export function KanbanBoard({
 
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
                         <span>{formatDate(req.created_at)}</span>
-                        {req.completed_at && col.key === "done" && (
+                        {req.completed_at && req.status_category === "done" && (
                           <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-600 font-medium">
                             {formatDuration(req.started_at, req.completed_at)}
                           </span>

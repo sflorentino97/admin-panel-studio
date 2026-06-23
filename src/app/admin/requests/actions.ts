@@ -37,6 +37,17 @@ export async function createRequest(
     .single();
   if (profile?.role !== "admin") return { error: "Acesso negado." };
 
+  const { data: defaultStatus } = await supabase
+    .from("request_statuses")
+    .select("id")
+    .eq("category", "backlog")
+    .eq("is_active", true)
+    .order("position")
+    .limit(1)
+    .single();
+
+  if (!defaultStatus) return { error: "Nenhum status padrão configurado." };
+
   const { error } = await supabase.from("requests").insert({
     client_id: clientId,
     title,
@@ -47,7 +58,7 @@ export async function createRequest(
     formats: formats.length > 0 ? formats : null,
     drive_link: driveLink,
     extra_info: extraInfo,
-    status: "queued",
+    status_id: defaultStatus.id,
     created_by: user.id,
   });
 
@@ -59,7 +70,7 @@ export async function createRequest(
 
 export async function updateRequestStatus(
   requestId: string,
-  newStatus: string
+  newStatusId: string
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
 
@@ -77,7 +88,7 @@ export async function updateRequestStatus(
 
   const { error } = await supabase
     .from("requests")
-    .update({ status: newStatus })
+    .update({ status_id: newStatusId })
     .eq("id", requestId);
 
   if (error) {

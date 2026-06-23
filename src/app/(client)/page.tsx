@@ -17,31 +17,35 @@ export default async function ClientDashboard() {
 
   const clientId = profile?.client_id;
 
-  const { data: client } = clientId
-    ? await supabase
-        .from("clients")
-        .select("name, billing_day, contract_path")
-        .eq("id", clientId)
-        .single()
-    : { data: null };
+  const [clientResult, requestsResult, statusesResult] = await Promise.all([
+    clientId
+      ? supabase.from("clients").select("name, billing_day, contract_path").eq("id", clientId).single()
+      : { data: null },
+    clientId
+      ? supabase.from("requests")
+          .select("id, title, status_id, priority, due_date, created_at, started_at, completed_at, request_types(name), request_statuses(id, name, category, color)")
+          .eq("client_id", clientId)
+          .order("created_at", { ascending: false })
+      : { data: null },
+    supabase.from("request_statuses").select("id, name, category, color, position, wip_limit, is_active").eq("is_active", true).order("position"),
+  ]);
 
-  const { data: requests } = clientId
-    ? await supabase
-        .from("requests")
-        .select("id, title, status, priority, due_date, created_at, started_at, completed_at, request_types(name)")
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: false })
-    : { data: null };
-
-  const mappedRequests = requests?.map((r) => ({
-    ...r,
-    type_name: (r.request_types as unknown as { name: string } | null)?.name ?? undefined,
-  })) ?? [];
+  const mappedRequests = requestsResult.data?.map((r) => {
+    const st = r.request_statuses as unknown as { id: string; name: string; category: string; color: string } | null;
+    return {
+      ...r,
+      status_name: st?.name ?? "—",
+      status_color: st?.color ?? "#9ca3af",
+      status_category: st?.category ?? "backlog",
+      type_name: (r.request_types as unknown as { name: string } | null)?.name ?? undefined,
+    };
+  }) ?? [];
 
   return (
     <ClientDashboardView
-      client={client}
+      client={clientResult.data}
       requests={mappedRequests}
+      statuses={statusesResult.data ?? []}
     />
   );
 }

@@ -12,7 +12,9 @@ type Request = {
   id: string;
   title: string;
   description: string | null;
-  status: string;
+  status_name: string;
+  status_color: string;
+  status_category: string;
   priority: number;
   created_at: string;
   started_at: string | null;
@@ -43,17 +45,11 @@ type Comment = {
 
 type HistoryEntry = {
   id: string;
-  from_status: string | null;
-  to_status: string;
+  from_status_name: string | null;
+  from_status_color: string | null;
+  to_status_name: string;
+  to_status_color: string;
   changed_at: string;
-};
-
-const statusLabels: Record<string, { label: string; dot: string }> = {
-  queued: { label: "Na fila", dot: "bg-gray-400" },
-  in_progress: { label: "Em andamento", dot: "bg-blue-500" },
-  in_review: { label: "Em revisão", dot: "bg-amber-500" },
-  done: { label: "Concluído", dot: "bg-emerald-500" },
-  cancelled: { label: "Cancelado", dot: "bg-red-400" },
 };
 
 const priorityLabels: Record<number, { label: string; color: string }> = {
@@ -63,12 +59,11 @@ const priorityLabels: Record<number, { label: string; color: string }> = {
   3: { label: "Urgente", color: "text-red-600" },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = statusLabels[status] ?? { label: status, dot: "bg-gray-400" };
+function StatusBadge({ name, color }: { name: string; color: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-      <span className="text-[12px] font-medium text-gray-600">{cfg.label}</span>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-[12px] font-medium text-gray-600">{name}</span>
     </span>
   );
 }
@@ -121,7 +116,7 @@ export function RequestDetail({
           <div className="min-w-0 flex-1">
             <h1 className="text-[22px] font-bold tracking-tight text-gray-900">{request.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
-              <StatusBadge status={request.status} />
+              <StatusBadge name={request.status_name} color={request.status_color} />
               <PriorityBadge priority={request.priority} />
               {request.client_name && (
                 <span className="inline-flex items-center gap-1 text-[13px] text-gray-500">
@@ -302,30 +297,30 @@ function StatusTimeline({ history }: { history: HistoryEntry[] }) {
         <div className="relative">
           <div className="absolute left-3 top-2 bottom-2 w-px bg-gray-200" />
           <div className="space-y-4">
-            {history.map((h, i) => {
-              const cfg = statusLabels[h.to_status] ?? { dot: "bg-gray-400" };
-              return (
-                <div key={h.id} className="relative flex items-start gap-3 pl-0">
-                  <div className={`relative z-10 mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-4 ring-white ${cfg.dot} ${i === 0 ? "ring-2 ring-brand-light" : ""}`} style={{ marginLeft: "5px" }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {h.from_status && (
-                        <>
-                          <StatusBadge status={h.from_status} />
-                          <svg className="h-3 w-3 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                          </svg>
-                        </>
-                      )}
-                      <StatusBadge status={h.to_status} />
-                    </div>
-                    <p className="mt-0.5 text-[11px] tabular-nums text-gray-400">
-                      {new Date(h.changed_at).toLocaleString("pt-BR")}
-                    </p>
+            {history.map((h, i) => (
+              <div key={h.id} className="relative flex items-start gap-3 pl-0">
+                <div
+                  className={`relative z-10 mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-4 ring-white ${i === 0 ? "ring-2 ring-brand-light" : ""}`}
+                  style={{ marginLeft: "5px", backgroundColor: h.to_status_color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {h.from_status_name && h.from_status_color && (
+                      <>
+                        <StatusBadge name={h.from_status_name} color={h.from_status_color} />
+                        <svg className="h-3 w-3 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                      </>
+                    )}
+                    <StatusBadge name={h.to_status_name} color={h.to_status_color} />
                   </div>
+                  <p className="mt-0.5 text-[11px] tabular-nums text-gray-400">
+                    {new Date(h.changed_at).toLocaleString("pt-BR")}
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </div>

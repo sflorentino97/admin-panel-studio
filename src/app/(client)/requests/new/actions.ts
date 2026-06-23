@@ -35,6 +35,17 @@ export async function submitRequest(
 
   if (!profile?.client_id) return { error: "Usuário não vinculado a um cliente." };
 
+  const { data: defaultStatus } = await supabase
+    .from("request_statuses")
+    .select("id")
+    .eq("category", "backlog")
+    .eq("is_active", true)
+    .order("position")
+    .limit(1)
+    .single();
+
+  if (!defaultStatus) return { error: "Nenhum status padrão configurado." };
+
   const { error } = await supabase.from("requests").insert({
     client_id: profile.client_id,
     title,
@@ -42,7 +53,7 @@ export async function submitRequest(
     formats: formats.length > 0 ? formats : null,
     drive_link: driveLink,
     extra_info: extraInfo,
-    status: "queued",
+    status_id: defaultStatus.id,
     created_by: user.id,
   });
 
