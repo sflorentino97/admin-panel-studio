@@ -10,9 +10,9 @@ export default async function AdminRequestDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [requestResult, attachmentsResult, commentsResult, historyResult, statusesResult, userResult] = await Promise.all([
+  const [requestResult, attachmentsResult, commentsResult, historyResult, statusesResult, userResult, teamResult] = await Promise.all([
     supabase.from("requests")
-      .select("*, clients(name), request_types(name), request_statuses(id, name, color, category)")
+      .select("*, clients(name), request_types(name), request_statuses(id, name, color, category), assigned_profile:profiles!assigned_to(full_name)")
       .eq("id", id).single(),
     supabase.from("request_attachments")
       .select("id, filename, storage_path, created_at, uploaded_by")
@@ -26,12 +26,17 @@ export default async function AdminRequestDetailPage({
     supabase.from("request_statuses")
       .select("id, name, color, category").order("position"),
     supabase.auth.getUser(),
+    supabase.from("profiles")
+      .select("id, full_name, role")
+      .in("role", ["admin", "member"])
+      .order("full_name"),
   ]);
 
   const request = requestResult.data;
   if (!request) notFound();
 
   const st = request.request_statuses as unknown as { id: string; name: string; color: string; category: string } | null;
+  const assignedProfile = request.assigned_profile as unknown as { full_name: string } | null;
   const statusMap = new Map((statusesResult.data ?? []).map(s => [s.id, s]));
 
   return (
@@ -43,6 +48,8 @@ export default async function AdminRequestDetailPage({
         status_category: st?.category ?? "backlog",
         client_name: (request.clients as unknown as { name: string } | null)?.name ?? null,
         type_name: (request.request_types as unknown as { name: string } | null)?.name ?? null,
+        assigned_to: request.assigned_to,
+        assigned_to_name: assignedProfile?.full_name ?? null,
       }}
       attachments={attachmentsResult.data ?? []}
       comments={
@@ -62,6 +69,7 @@ export default async function AdminRequestDetailPage({
       }))}
       currentUserId={userResult.data.user?.id ?? ""}
       isAdmin
+      teamMembers={teamResult.data ?? []}
     />
   );
 }

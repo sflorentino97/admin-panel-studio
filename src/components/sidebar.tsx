@@ -137,6 +137,24 @@ const clientNav: NavItem[] = [
     ),
   },
   {
+    href: "/empresa",
+    label: "Minha Empresa",
+    icon: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+      </svg>
+    ),
+  },
+  {
+    href: "/projetos",
+    label: "Projetos",
+    icon: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+      </svg>
+    ),
+  },
+  {
     href: "/perfil",
     label: "Meu Perfil",
     icon: (
@@ -156,9 +174,11 @@ function isActive(href: string, pathname: string) {
 export function Sidebar({
   userName,
   role,
+  avatarUrl,
 }: {
   userName: string;
   role: "admin" | "member" | "client";
+  avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -219,9 +239,17 @@ export function Sidebar({
       {/* User section */}
       <div className="border-t border-white/[0.06] p-2">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-accent text-[12px] font-semibold text-white">
-            {userName.charAt(0).toUpperCase()}
-          </div>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={userName}
+              className="h-8 w-8 flex-shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-accent text-[12px] font-semibold text-white">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="truncate text-[13px] font-medium text-white/90">{userName}</p>
             <p className="text-[11px] text-white/35">{role === "admin" ? "Administrador" : role === "member" ? "Equipe" : "Cliente"}</p>

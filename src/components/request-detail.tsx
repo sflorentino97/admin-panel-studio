@@ -7,6 +7,7 @@ import {
   uploadAttachment,
   getAttachmentUrl,
 } from "@/app/admin/requests/[id]/actions";
+import { assignRequest } from "@/app/admin/requests/actions";
 
 type Request = {
   id: string;
@@ -25,6 +26,14 @@ type Request = {
   formats: string[] | null;
   drive_link: string | null;
   extra_info: string | null;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
+};
+
+type TeamMember = {
+  id: string;
+  full_name: string | null;
+  role: string;
 };
 
 type Attachment = {
@@ -88,6 +97,7 @@ export function RequestDetail({
   history,
   currentUserId,
   isAdmin,
+  teamMembers = [],
 }: {
   request: Request;
   attachments: Attachment[];
@@ -95,7 +105,10 @@ export function RequestDetail({
   history: HistoryEntry[];
   currentUserId: string;
   isAdmin: boolean;
+  teamMembers?: TeamMember[];
 }) {
+  const [assignee, setAssignee] = useState(request.assigned_to ?? "");
+  const [assignPending, startAssignTransition] = useTransition();
   const breadcrumbs = isAdmin
     ? [
         { label: "Demandas", href: "/admin/requests" },
@@ -129,6 +142,38 @@ export function RequestDetail({
               {request.type_name && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-brand-light px-2 py-0.5 text-[11px] font-medium text-brand">
                   {request.type_name}
+                </span>
+              )}
+              {isAdmin && teamMembers.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[13px] text-gray-500">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <select
+                    value={assignee}
+                    disabled={assignPending}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAssignee(val);
+                      startAssignTransition(async () => {
+                        await assignRequest(request.id, val || null);
+                      });
+                    }}
+                    className="rounded-md border-0 bg-transparent py-0.5 text-[13px] font-medium text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="">Sem responsável</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.full_name ?? m.id}</option>
+                    ))}
+                  </select>
+                </span>
+              )}
+              {!isAdmin && request.assigned_to_name && (
+                <span className="inline-flex items-center gap-1 text-[13px] text-gray-500">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {request.assigned_to_name}
                 </span>
               )}
             </div>

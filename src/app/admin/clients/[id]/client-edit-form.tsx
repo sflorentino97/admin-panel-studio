@@ -16,6 +16,12 @@ type Client = {
   contract_path: string | null;
   plan_name: string | null;
   monthly_amount: number | null;
+  cnpj: string | null;
+  razao_social: string | null;
+  nome_fantasia: string | null;
+  endereco: string | null;
+  inscricao_estadual: string | null;
+  inscricao_municipal: string | null;
 };
 
 export function ClientEditForm({ client }: { client: Client }) {
@@ -151,6 +157,42 @@ export function ClientEditForm({ client }: { client: Client }) {
             <label htmlFor="is_active" className="text-[13px] font-medium text-gray-700">
               Cliente ativo
             </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset className="rounded-xl border border-gray-200/80 bg-white p-5">
+        <legend className="px-2 text-[13px] font-semibold text-gray-900">Dados fiscais</legend>
+        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="cnpj" className="block text-[13px] font-medium text-gray-600">CNPJ</label>
+            <input id="cnpj" name="cnpj" type="text" defaultValue={client.cnpj ?? ""} placeholder="00.000.000/0000-00"
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
+          </div>
+          <div>
+            <label htmlFor="razao_social" className="block text-[13px] font-medium text-gray-600">Razão Social</label>
+            <input id="razao_social" name="razao_social" type="text" defaultValue={client.razao_social ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
+          </div>
+          <div>
+            <label htmlFor="nome_fantasia" className="block text-[13px] font-medium text-gray-600">Nome Fantasia</label>
+            <input id="nome_fantasia" name="nome_fantasia" type="text" defaultValue={client.nome_fantasia ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
+          </div>
+          <div>
+            <label htmlFor="inscricao_estadual" className="block text-[13px] font-medium text-gray-600">Inscrição Estadual</label>
+            <input id="inscricao_estadual" name="inscricao_estadual" type="text" defaultValue={client.inscricao_estadual ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
+          </div>
+          <div>
+            <label htmlFor="inscricao_municipal" className="block text-[13px] font-medium text-gray-600">Inscrição Municipal</label>
+            <input id="inscricao_municipal" name="inscricao_municipal" type="text" defaultValue={client.inscricao_municipal ?? ""}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="endereco" className="block text-[13px] font-medium text-gray-600">Endereço</label>
+            <input id="endereco" name="endereco" type="text" defaultValue={client.endereco ?? ""} placeholder="Rua, número, bairro, cidade - UF"
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
           </div>
         </div>
       </fieldset>

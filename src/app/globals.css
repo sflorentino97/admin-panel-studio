@@ -53,6 +53,14 @@
   animation: scale-in 200ms ease-out;
 }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-in-left,
   .animate-fade-in,

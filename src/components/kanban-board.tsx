@@ -18,6 +18,7 @@ export type KanbanRequest = {
   due_date?: string | null;
   client_name?: string;
   type_name?: string;
+  assigned_to_name?: string | null;
 };
 
 const priorityConfig: Record<number, { border: string; indicator: string; label: string }> = {
@@ -99,7 +100,7 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" style={{ gridTemplateColumns: `repeat(${Math.min(visibleStatuses.length, 4)}, minmax(0, 1fr))` }}>
+    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:overflow-visible sm:snap-none scrollbar-hide" style={{ gridTemplateColumns: `repeat(${Math.min(visibleStatuses.length, 4)}, minmax(0, 1fr))` }}>
       {visibleStatuses.map((col) => {
         const items = requests.filter((r) => r.status_id === col.id);
         const isOver = dragOverColumn === col.id;
@@ -107,7 +108,7 @@ export function KanbanBoard({
         return (
           <div
             key={col.id}
-            className={`rounded-xl bg-gray-50/80 p-2.5 transition-all duration-200 ${
+            className={`min-w-[280px] flex-shrink-0 snap-center rounded-xl bg-gray-50/80 p-2.5 transition-all duration-200 sm:min-w-0 sm:flex-shrink ${
               isOver ? "ring-2 ring-brand/30 bg-brand-50/40" : ""
             }`}
             onDragOver={!readOnly ? (e) => handleDragOver(e, col.id) : undefined}
@@ -176,6 +177,14 @@ export function KanbanBoard({
                       )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
+                        {req.assigned_to_name && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[8px] font-bold text-gray-600">
+                              {req.assigned_to_name.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="text-gray-500">{req.assigned_to_name.split(" ")[0]}</span>
+                          </span>
+                        )}
                         <span>{formatDate(req.created_at)}</span>
                         {req.completed_at && req.status_category === "done" && (
                           <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-600 font-medium">

@@ -20,10 +20,12 @@ export function NewRequestForm({
   clients,
   types,
   customFields,
+  teamMembers = [],
 }: {
   clients: { id: string; name: string }[];
   types: { id: string; name: string }[];
   customFields: CustomField[];
+  teamMembers?: { id: string; full_name: string | null; role: string }[];
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     createRequest,
@@ -100,6 +102,16 @@ export function NewRequestForm({
               <label htmlFor="due_date" className="block text-[13px] font-medium text-gray-600">Prazo</label>
               <input id="due_date" name="due_date" type="date" className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
             </div>
+
+            {teamMembers.length > 0 && (
+              <div>
+                <label htmlFor="assigned_to" className="block text-[13px] font-medium text-gray-600">Responsável</label>
+                <select id="assigned_to" name="assigned_to" className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10">
+                  <option value="">Nenhum</option>
+                  {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.full_name ?? m.id}</option>)}
+                </select>
+              </div>
+            )}
 
             <div className="sm:col-span-2">
               <label htmlFor="description" className="block text-[13px] font-medium text-gray-600">Descrição</label>

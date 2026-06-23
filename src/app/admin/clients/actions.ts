@@ -117,6 +117,12 @@ export async function updateClient(
   const planName = (formData.get("plan_name") as string) || null;
   const monthlyAmountRaw = formData.get("monthly_amount") as string;
   const monthlyAmount = monthlyAmountRaw ? parseFloat(monthlyAmountRaw) : null;
+  const cnpj = (formData.get("cnpj") as string) || null;
+  const razaoSocial = (formData.get("razao_social") as string) || null;
+  const nomeFantasia = (formData.get("nome_fantasia") as string) || null;
+  const endereco = (formData.get("endereco") as string) || null;
+  const inscricaoEstadual = (formData.get("inscricao_estadual") as string) || null;
+  const inscricaoMunicipal = (formData.get("inscricao_municipal") as string) || null;
 
   if (!clientId || !name) {
     return { error: "ID e nome são obrigatórios." };
@@ -149,6 +155,12 @@ export async function updateClient(
       is_active: isActive,
       plan_name: planName,
       monthly_amount: monthlyAmount,
+      cnpj,
+      razao_social: razaoSocial,
+      nome_fantasia: nomeFantasia,
+      endereco,
+      inscricao_estadual: inscricaoEstadual,
+      inscricao_municipal: inscricaoMunicipal,
       updated_at: new Date().toISOString(),
     })
     .eq("id", clientId);
