@@ -10,6 +10,8 @@ type ClientInfo = {
   name: string;
   billing_day: number | null;
   contract_path: string | null;
+  plan_name: string | null;
+  monthly_amount: number | null;
 } | null;
 
 export function ClientDashboardView({
@@ -74,6 +76,40 @@ export function ClientDashboardView({
 
         <ContractCard hasContract={!!client?.contract_path} />
       </div>
+
+      {/* Plano & Cobrança */}
+      {client && (client.plan_name || client.billing_day) && (
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {client.plan_name && (
+            <div className="rounded-xl border border-gray-200/80 bg-white p-4 transition-shadow duration-150 hover:shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-brand" />
+                <p className="text-[12px] font-medium text-gray-500">Plano</p>
+              </div>
+              <p className="mt-2 text-[13px] font-semibold text-gray-900">{client.plan_name}</p>
+              {client.monthly_amount && (
+                <p className="mt-0.5 text-[12px] tabular-nums text-gray-400">
+                  {client.monthly_amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+                </p>
+              )}
+            </div>
+          )}
+          {client.billing_day && (
+            <div className="rounded-xl border border-gray-200/80 bg-white p-4 transition-shadow duration-150 hover:shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <p className="text-[12px] font-medium text-gray-500">Próxima cobrança</p>
+              </div>
+              <p className="mt-2 text-[13px] font-semibold tabular-nums text-gray-900">
+                {formatNextBilling(client.billing_day)}
+              </p>
+              <p className="mt-0.5 text-[12px] text-gray-400">
+                Dia {client.billing_day} de cada mês
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -163,6 +199,13 @@ export function ClientDashboardView({
       </div>
     </div>
   );
+}
+
+function formatNextBilling(billingDay: number): string {
+  const now = new Date();
+  let next = new Date(now.getFullYear(), now.getMonth(), billingDay);
+  if (next <= now) next = new Date(now.getFullYear(), now.getMonth() + 1, billingDay);
+  return next.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 function ContractCard({ hasContract }: { hasContract: boolean }) {

@@ -19,7 +19,7 @@ export default async function ClientDashboard() {
 
   const [clientResult, requestsResult, statusesResult] = await Promise.all([
     clientId
-      ? supabase.from("clients").select("name, billing_day, contract_path").eq("id", clientId).single()
+      ? supabase.from("clients").select("name, billing_day, contract_path, plan_name, monthly_amount").eq("id", clientId).single()
       : { data: null },
     clientId
       ? supabase.from("requests")
