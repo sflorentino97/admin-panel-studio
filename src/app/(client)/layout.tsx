@@ -20,7 +20,7 @@ export default async function ClientLayout({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role === "admin") redirect("/admin");
+  if (profile?.role === "admin" || profile?.role === "member") redirect("/admin");
 
   return (
     <div className="min-h-dvh bg-[#f8f8f8]">

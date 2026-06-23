@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ClientEditForm } from "./client-edit-form";
 
@@ -9,7 +9,7 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data: client } = await supabase
     .from("clients")

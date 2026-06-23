@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export default async function ClientsPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: clients } = await supabase
     .from("clients")
     .select("id, name, email, phone, is_active, billing_day, created_at")

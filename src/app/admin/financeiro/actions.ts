@@ -92,3 +92,20 @@ export async function deleteExpense(id: string) {
   revalidatePath("/admin/financeiro");
   return {};
 }
+
+export async function saveTaxRate(rate: number) {
+  if (rate < 0 || rate > 100) return { error: "Alíquota inválida." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Não autenticado." };
+
+  const { error } = await supabase
+    .from("studio_settings")
+    .update({ tax_rate_percent: rate, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/financeiro");
+  return {};
+}
