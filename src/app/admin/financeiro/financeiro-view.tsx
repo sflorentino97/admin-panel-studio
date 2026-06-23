@@ -6,7 +6,7 @@ import {
   updateInvoiceStatus,
   createExpense,
   deleteExpense,
-  saveTaxRate,
+  saveTaxRates,
 } from "./actions";
 
 type Overview = {
@@ -17,7 +17,8 @@ type Overview = {
   despesas_mes: number;
   custos_operacionais: number;
   despesas_variaveis: number;
-  tax_rate: number;
+  tax_rate_min: number;
+  tax_rate_max: number;
   total_clientes_ativos: number;
   receita_mes_anterior: number;
   despesas_mes_anterior: number;
@@ -58,15 +59,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
 };
 
 const EXPENSE_CATEGORIES = [
-  "Software",
-  "Salários",
-  "Aluguel",
-  "Marketing",
-  "Equipamento",
-  "Impostos",
-  "Contabilidade",
-  "Internet/Telefone",
-  "Outros",
+  "Software", "Salários", "Aluguel", "Marketing",
+  "Equipamento", "Impostos", "Contabilidade", "Internet/Telefone", "Outros",
 ];
 
 function fmt(value: number | string) {
@@ -74,11 +68,21 @@ function fmt(value: number | string) {
   return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtRange(min: number, max: number) {
+  if (min === max) return fmt(min);
+  return `${fmt(min)} a ${fmt(max)}`;
+}
+
 function pct(value: number) {
   return `${value.toFixed(1)}%`;
 }
 
-function delta(current: number, previous: number) {
+function pctRange(min: number, max: number) {
+  if (min === max) return pct(min);
+  return `${pct(min)} a ${pct(max)}`;
+}
+
+function deltaIndicator(current: number, previous: number) {
   if (previous === 0) return null;
   return ((current - previous) / previous) * 100;
 }
@@ -107,19 +111,23 @@ export function FinanceiroView({
   const despesasTotal = Number(overview?.despesas_mes ?? 0);
   const custosOp = Number(overview?.custos_operacionais ?? 0);
   const despesasVar = Number(overview?.despesas_variaveis ?? 0);
-  const taxRate = Number(overview?.tax_rate ?? 10);
+  const taxMin = Number(overview?.tax_rate_min ?? 7);
+  const taxMax = Number(overview?.tax_rate_max ?? 14);
   const totalClientes = Number(overview?.total_clientes_ativos ?? 0);
   const receitaAnterior = Number(overview?.receita_mes_anterior ?? 0);
   const despesasAnterior = Number(overview?.despesas_mes_anterior ?? 0);
 
-  const impostos = receita * (taxRate / 100);
-  const receitaLiquida = receita - impostos;
-  const lucroLiquido = receitaLiquida - despesasTotal;
-  const margemLiquida = receita > 0 ? (lucroLiquido / receita) * 100 : 0;
-  const margemBruta = receita > 0 ? ((receita - despesasTotal) / receita) * 100 : 0;
+  const impostosMin = receita * (taxMin / 100);
+  const impostosMax = receita * (taxMax / 100);
+  const receitaLiqMax = receita - impostosMin;
+  const receitaLiqMin = receita - impostosMax;
+  const lucroMax = receitaLiqMax - despesasTotal;
+  const lucroMin = receitaLiqMin - despesasTotal;
+  const margemMax = receita > 0 ? (lucroMax / receita) * 100 : 0;
+  const margemMin = receita > 0 ? (lucroMin / receita) * 100 : 0;
 
-  const receitaDelta = delta(receita, receitaAnterior);
-  const despesasDelta = delta(despesasTotal, despesasAnterior);
+  const receitaDelta = deltaIndicator(receita, receitaAnterior);
+  const despesasDelta = deltaIndicator(despesasTotal, despesasAnterior);
 
   const tabs = [
     { key: "faturas" as const, label: "Faturas" },
@@ -134,24 +142,45 @@ export function FinanceiroView({
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-gray-900">Financeiro</h1>
           <p className="mt-0.5 text-[13px] text-gray-500">
-            {totalClientes} cliente{totalClientes !== 1 ? "s" : ""} ativo{totalClientes !== 1 ? "s" : ""} · Imposto {pct(taxRate)}
+            {totalClientes} cliente{totalClientes !== 1 ? "s" : ""} ativo{totalClientes !== 1 ? "s" : ""} · Imposto {pct(taxMin)} – {pct(taxMax)}
           </p>
         </div>
-        <TaxRateEditor initialRate={taxRate} />
+        <TaxRateEditor initialMin={taxMin} initialMax={taxMax} />
       </div>
 
-      {/* KPI Grid — 2 rows */}
+      {/* KPI Grid */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KPICard label="Receita Bruta" value={fmt(receita)} color="text-emerald-600" dot="bg-emerald-500" delta={receitaDelta} />
-        <KPICard label="Impostos" value={fmt(impostos)} sub={pct(taxRate)} color="text-amber-600" dot="bg-amber-500" />
-        <KPICard label="Receita Líquida" value={fmt(receitaLiquida)} color="text-blue-600" dot="bg-blue-500" />
+        <KPICard
+          label="Impostos (est.)"
+          value={fmtRange(impostosMin, impostosMax)}
+          sub={`${pct(taxMin)} – ${pct(taxMax)}`}
+          color="text-amber-600"
+          dot="bg-amber-500"
+        />
+        <KPICard
+          label="Receita Líquida (est.)"
+          value={fmtRange(receitaLiqMin, receitaLiqMax)}
+          color="text-blue-600"
+          dot="bg-blue-500"
+        />
         <KPICard label="MRR" value={fmt(mrr)} sub={`${totalClientes} clientes`} color="text-brand" dot="bg-brand" />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KPICard label="Custos Operacionais" value={fmt(custosOp)} color="text-orange-600" dot="bg-orange-500" />
         <KPICard label="Despesas Variáveis" value={fmt(despesasVar)} color="text-pink-600" dot="bg-pink-500" delta={despesasDelta} />
-        <KPICard label="Lucro Líquido" value={fmt(lucroLiquido)} color={lucroLiquido >= 0 ? "text-emerald-600" : "text-red-600"} dot={lucroLiquido >= 0 ? "bg-emerald-500" : "bg-red-500"} />
-        <KPICard label="Margem Líquida" value={pct(margemLiquida)} sub={`Bruta: ${pct(margemBruta)}`} color={margemLiquida >= 0 ? "text-emerald-600" : "text-red-600"} dot={margemLiquida >= 0 ? "bg-emerald-500" : "bg-red-500"} />
+        <KPICard
+          label="Lucro Líquido (est.)"
+          value={fmtRange(lucroMin, lucroMax)}
+          color={lucroMin >= 0 ? "text-emerald-600" : "text-red-600"}
+          dot={lucroMin >= 0 ? "bg-emerald-500" : "bg-red-500"}
+        />
+        <KPICard
+          label="Margem Líquida (est.)"
+          value={pctRange(margemMin, margemMax)}
+          color={margemMin >= 0 ? "text-emerald-600" : "text-red-600"}
+          dot={margemMin >= 0 ? "bg-emerald-500" : "bg-red-500"}
+        />
       </div>
 
       {/* Pendências */}
@@ -209,22 +238,25 @@ export function FinanceiroView({
       <div className="mt-4">
         {tab === "faturas" && <InvoiceList invoices={invoices} />}
         {tab === "despesas" && <ExpenseList expenses={expenses} recurringExpenses={recurringExpenses} />}
-        {tab === "calculadora" && <MarginCalculator taxRate={taxRate} custosOp={custosOp} />}
-        {tab === "previsao" && <Forecast mrr={mrr} taxRate={taxRate} custosOp={custosOp} despesasVar={despesasVar} clients={clients} />}
+        {tab === "calculadora" && <MarginCalculator taxMin={taxMin} taxMax={taxMax} />}
+        {tab === "previsao" && <Forecast mrr={mrr} taxMin={taxMin} taxMax={taxMax} custosOp={custosOp} despesasVar={despesasVar} clients={clients} />}
       </div>
     </div>
   );
 }
 
 // ─── Tax Rate Editor ──────────────────────────────────────────
-function TaxRateEditor({ initialRate }: { initialRate: number }) {
+function TaxRateEditor({ initialMin, initialMax }: { initialMin: number; initialMax: number }) {
   const [editing, setEditing] = useState(false);
-  const [rate, setRate] = useState(initialRate);
+  const [rateMin, setRateMin] = useState(initialMin);
+  const [rateMax, setRateMax] = useState(initialMax);
   const [isPending, startTransition] = useTransition();
 
   function handleSave() {
+    const min = Math.min(rateMin, rateMax);
+    const max = Math.max(rateMin, rateMax);
     startTransition(async () => {
-      await saveTaxRate(rate);
+      await saveTaxRates(min, max);
       setEditing(false);
     });
   }
@@ -238,24 +270,39 @@ function TaxRateEditor({ initialRate }: { initialRate: number }) {
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
         </svg>
-        Imposto: {pct(initialRate)}
+        Imposto: {pct(initialMin)} – {pct(initialMax)}
       </button>
     );
   }
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-brand/20 bg-brand-light/30 px-4 py-3">
-      <label className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Alíquota:</label>
-      <input
-        type="range"
-        min={0}
-        max={30}
-        step={0.5}
-        value={rate}
-        onChange={(e) => setRate(parseFloat(e.target.value))}
-        className="w-32 accent-brand"
-      />
-      <span className="w-12 text-center text-[14px] font-bold tabular-nums text-brand">{pct(rate)}</span>
+      <div className="flex items-center gap-2">
+        <label className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Mín:</label>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          value={rateMin}
+          onChange={(e) => setRateMin(parseFloat(e.target.value) || 0)}
+          className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-center text-[13px] tabular-nums font-medium focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+        />
+        <span className="text-[12px] text-gray-400">%</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Máx:</label>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          value={rateMax}
+          onChange={(e) => setRateMax(parseFloat(e.target.value) || 0)}
+          className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-center text-[13px] tabular-nums font-medium focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+        />
+        <span className="text-[12px] text-gray-400">%</span>
+      </div>
       <button
         onClick={handleSave}
         disabled={isPending}
@@ -264,7 +311,7 @@ function TaxRateEditor({ initialRate }: { initialRate: number }) {
         {isPending ? "..." : "Salvar"}
       </button>
       <button
-        onClick={() => { setRate(initialRate); setEditing(false); }}
+        onClick={() => { setRateMin(initialMin); setRateMax(initialMax); setEditing(false); }}
         className="rounded-lg px-2 py-1.5 text-[12px] font-medium text-gray-500 hover:bg-gray-100"
       >
         Cancelar
@@ -274,7 +321,7 @@ function TaxRateEditor({ initialRate }: { initialRate: number }) {
 }
 
 // ─── KPI Card ─────────────────────────────────────────────────
-function KPICard({ label, value, sub, color, dot, delta: d }: {
+function KPICard({ label, value, sub, color, dot, delta }: {
   label: string; value: string; sub?: string; color: string; dot: string; delta?: number | null;
 }) {
   return (
@@ -283,12 +330,12 @@ function KPICard({ label, value, sub, color, dot, delta: d }: {
         <span className={`h-2 w-2 rounded-full ${dot}`} />
         <p className="text-[12px] font-medium text-gray-500">{label}</p>
       </div>
-      <p className={`mt-2 text-lg font-bold tabular-nums tracking-tight ${color}`}>{value}</p>
+      <p className={`mt-2 text-[15px] font-bold tabular-nums tracking-tight leading-snug ${color}`}>{value}</p>
       <div className="mt-1 flex items-center gap-2">
         {sub && <span className="text-[11px] text-gray-400">{sub}</span>}
-        {d != null && (
-          <span className={`text-[11px] font-medium ${d >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {d >= 0 ? "+" : ""}{d.toFixed(1)}%
+        {delta != null && (
+          <span className={`text-[11px] font-medium ${delta >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {delta >= 0 ? "+" : ""}{delta.toFixed(1)}%
           </span>
         )}
       </div>
@@ -297,7 +344,7 @@ function KPICard({ label, value, sub, color, dot, delta: d }: {
 }
 
 // ─── Margin Calculator ────────────────────────────────────────
-function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: number }) {
+function MarginCalculator({ taxMin, taxMax }: { taxMin: number; taxMax: number }) {
   const [valor, setValor] = useState<string>("");
   const [custoExtra, setCustoExtra] = useState<string>("");
   const [horasEstimadas, setHorasEstimadas] = useState<string>("");
@@ -308,19 +355,26 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
   const horas = parseFloat(horasEstimadas) || 0;
   const cHora = parseFloat(custoHora) || 0;
 
-  const imposto = v * (taxRate / 100);
+  const impostoMin = v * (taxMin / 100);
+  const impostoMax = v * (taxMax / 100);
   const custoMaoDeObra = horas * cHora;
-  const custoTotal = extra + custoMaoDeObra;
-  const lucro = v - imposto - custoTotal;
-  const margem = v > 0 ? (lucro / v) * 100 : 0;
-  const markup = custoTotal > 0 ? ((v - custoTotal) / custoTotal) * 100 : 0;
+  const custoBase = extra + custoMaoDeObra;
+
+  const lucroMax = v - impostoMin - custoBase;
+  const lucroMin = v - impostoMax - custoBase;
+  const margemMax = v > 0 ? (lucroMax / v) * 100 : 0;
+  const margemMin = v > 0 ? (lucroMin / v) * 100 : 0;
+  const markupMax = custoBase > 0 ? ((v - custoBase - impostoMin) / custoBase) * 100 : 0;
+  const markupMin = custoBase > 0 ? ((v - custoBase - impostoMax) / custoBase) * 100 : 0;
+
+  const healthMargin = (margemMin + margemMax) / 2;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Inputs */}
       <div className="rounded-xl border border-gray-200/80 bg-white p-6">
         <h3 className="text-[15px] font-semibold text-gray-900">Calculadora de Margem</h3>
-        <p className="mt-1 text-[12px] text-gray-400">Simule o lucro de um projeto ou serviço</p>
+        <p className="mt-1 text-[12px] text-gray-400">Simule o lucro de um projeto considerando imposto de {pct(taxMin)} a {pct(taxMax)}</p>
 
         <div className="mt-5 space-y-4">
           <div>
@@ -331,7 +385,7 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
               min="0"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              placeholder="5.000,00"
+              placeholder="5000"
               className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] tabular-nums focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
             />
           </div>
@@ -370,7 +424,7 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
               min="0"
               value={custoExtra}
               onChange={(e) => setCustoExtra(e.target.value)}
-              placeholder="500,00"
+              placeholder="500"
               className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] tabular-nums focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
             />
           </div>
@@ -383,11 +437,27 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
           <h3 className="text-[15px] font-semibold text-gray-900">Resultado</h3>
           <div className="mt-4 space-y-3">
             <ResultRow label="Valor cobrado" value={fmt(v)} bold />
-            <ResultRow label={`Impostos (${pct(taxRate)})`} value={`- ${fmt(imposto)}`} color="text-amber-600" />
-            <ResultRow label="Mão de obra" value={`- ${fmt(custoMaoDeObra)}`} sub={horas > 0 ? `${horas}h × ${fmt(cHora)}` : undefined} color="text-orange-600" />
+            <div className="rounded-lg bg-amber-50/60 px-3 py-2 -mx-1">
+              <ResultRow
+                label={`Impostos (${pct(taxMin)} – ${pct(taxMax)})`}
+                value={`- ${fmtRange(impostoMin, impostoMax)}`}
+                color="text-amber-600"
+              />
+            </div>
+            <ResultRow
+              label="Mão de obra"
+              value={`- ${fmt(custoMaoDeObra)}`}
+              sub={horas > 0 ? `${horas}h × ${fmt(cHora)}` : undefined}
+              color="text-orange-600"
+            />
             <ResultRow label="Custos extras" value={`- ${fmt(extra)}`} color="text-pink-600" />
             <div className="border-t border-gray-100 pt-3">
-              <ResultRow label="Lucro" value={fmt(lucro)} color={lucro >= 0 ? "text-emerald-600" : "text-red-600"} bold />
+              <ResultRow
+                label="Lucro estimado"
+                value={fmtRange(lucroMin, lucroMax)}
+                color={lucroMin >= 0 ? "text-emerald-600" : "text-red-600"}
+                bold
+              />
             </div>
           </div>
         </div>
@@ -395,25 +465,28 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-xl border border-gray-200/80 bg-white p-4 text-center">
             <p className="text-[11px] font-medium text-gray-500">Margem Líquida</p>
-            <p className={`mt-1 text-xl font-bold tabular-nums ${margem >= 30 ? "text-emerald-600" : margem >= 15 ? "text-amber-600" : "text-red-600"}`}>
-              {pct(margem)}
+            <p className={`mt-1 text-[15px] font-bold tabular-nums leading-snug ${healthMargin >= 30 ? "text-emerald-600" : healthMargin >= 15 ? "text-amber-600" : "text-red-600"}`}>
+              {pctRange(margemMin, margemMax)}
             </p>
           </div>
           <div className="rounded-xl border border-gray-200/80 bg-white p-4 text-center">
             <p className="text-[11px] font-medium text-gray-500">Markup</p>
-            <p className="mt-1 text-xl font-bold tabular-nums text-brand">{pct(markup)}</p>
+            <p className="mt-1 text-[15px] font-bold tabular-nums leading-snug text-brand">
+              {pctRange(markupMin, markupMax)}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200/80 bg-white p-4 text-center">
             <p className="text-[11px] font-medium text-gray-500">Custo Total</p>
-            <p className="mt-1 text-xl font-bold tabular-nums text-gray-900">{fmt(custoTotal + imposto)}</p>
+            <p className="mt-1 text-[15px] font-bold tabular-nums leading-snug text-gray-900">
+              {fmtRange(custoBase + impostoMin, custoBase + impostoMax)}
+            </p>
           </div>
         </div>
 
-        {/* Margin health indicator */}
         <div className={`rounded-xl p-4 text-[13px] font-medium ${
-          margem >= 30
+          healthMargin >= 30
             ? "bg-emerald-50 text-emerald-800 border border-emerald-200/60"
-            : margem >= 15
+            : healthMargin >= 15
               ? "bg-amber-50 text-amber-800 border border-amber-200/60"
               : v > 0
                 ? "bg-red-50 text-red-800 border border-red-200/60"
@@ -421,9 +494,9 @@ function MarginCalculator({ taxRate, custosOp }: { taxRate: number; custosOp: nu
         }`}>
           {v === 0
             ? "Preencha o valor para ver a análise"
-            : margem >= 30
+            : healthMargin >= 30
               ? "Margem saudável — projeto viável com boa rentabilidade"
-              : margem >= 15
+              : healthMargin >= 15
                 ? "Margem apertada — considere renegociar o valor ou reduzir custos"
                 : "Margem crítica — projeto pode dar prejuízo, revise os custos"
           }
@@ -448,8 +521,8 @@ function ResultRow({ label, value, sub, color, bold }: {
 }
 
 // ─── Forecast ─────────────────────────────────────────────────
-function Forecast({ mrr, taxRate, custosOp, despesasVar, clients }: {
-  mrr: number; taxRate: number; custosOp: number; despesasVar: number; clients: Client[];
+function Forecast({ mrr, taxMin, taxMax, custosOp, despesasVar, clients }: {
+  mrr: number; taxMin: number; taxMax: number; custosOp: number; despesasVar: number; clients: Client[];
 }) {
   const [months, setMonths] = useState(6);
   const [growthRate, setGrowthRate] = useState(0);
@@ -459,30 +532,36 @@ function Forecast({ mrr, taxRate, custosOp, despesasVar, clients }: {
     const date = new Date(today.getFullYear(), today.getMonth() + i + 1, 1);
     const growthMultiplier = Math.pow(1 + growthRate / 100, i);
     const receitaProj = mrr * growthMultiplier;
-    const impostosProj = receitaProj * (taxRate / 100);
-    const receitaLiqProj = receitaProj - impostosProj;
+    const impMin = receitaProj * (taxMin / 100);
+    const impMax = receitaProj * (taxMax / 100);
     const despesasProj = custosOp + despesasVar;
-    const lucroProj = receitaLiqProj - despesasProj;
-    const margemProj = receitaProj > 0 ? (lucroProj / receitaProj) * 100 : 0;
+    const lucroMax = receitaProj - impMin - despesasProj;
+    const lucroMin = receitaProj - impMax - despesasProj;
+    const margemMax = receitaProj > 0 ? (lucroMax / receitaProj) * 100 : 0;
+    const margemMin = receitaProj > 0 ? (lucroMin / receitaProj) * 100 : 0;
     return {
       month: date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
       receita: receitaProj,
-      impostos: impostosProj,
-      receitaLiq: receitaLiqProj,
+      impMin,
+      impMax,
       despesas: despesasProj,
-      lucro: lucroProj,
-      margem: margemProj,
+      lucroMin,
+      lucroMax,
+      margemMin,
+      margemMax,
     };
   });
 
-  const acumulado = rows.reduce(
-    (acc, r) => ({
-      receita: acc.receita + r.receita,
-      impostos: acc.impostos + r.impostos,
-      despesas: acc.despesas + r.despesas,
-      lucro: acc.lucro + r.lucro,
+  const acc = rows.reduce(
+    (a, r) => ({
+      receita: a.receita + r.receita,
+      impMin: a.impMin + r.impMin,
+      impMax: a.impMax + r.impMax,
+      despesas: a.despesas + r.despesas,
+      lucroMin: a.lucroMin + r.lucroMin,
+      lucroMax: a.lucroMax + r.lucroMax,
     }),
-    { receita: 0, impostos: 0, despesas: 0, lucro: 0 }
+    { receita: 0, impMin: 0, impMax: 0, despesas: 0, lucroMin: 0, lucroMax: 0 }
   );
 
   return (
@@ -518,7 +597,7 @@ function Forecast({ mrr, taxRate, custosOp, despesasVar, clients }: {
         </div>
         <div className="flex items-center gap-2 text-[12px] text-gray-400">
           <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-          Base: MRR {fmt(mrr)} · Imposto {pct(taxRate)} · Custos fixos {fmt(custosOp + despesasVar)}/mês
+          MRR {fmt(mrr)} · Imposto {pct(taxMin)}–{pct(taxMax)} · Custos {fmt(custosOp + despesasVar)}/mês
         </div>
       </div>
 
@@ -530,46 +609,46 @@ function Forecast({ mrr, taxRate, custosOp, despesasVar, clients }: {
               <tr className="border-b border-gray-100">
                 <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Mês</th>
                 <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Receita Bruta</th>
-                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Impostos</th>
-                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Receita Líq.</th>
+                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Impostos (est.)</th>
                 <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Despesas</th>
-                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Lucro</th>
-                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Margem</th>
+                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Lucro (est.)</th>
+                <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500">Margem (est.)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {rows.map((r, i) => (
-                <tr key={i} className="transition-colors duration-150 hover:bg-gray-50/60">
-                  <td className="whitespace-nowrap px-4 py-3 text-[13px] font-medium text-gray-900 capitalize">{r.month}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-gray-900">{fmt(r.receita)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-amber-600">{fmt(r.impostos)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-blue-600">{fmt(r.receitaLiq)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-orange-600">{fmt(r.despesas)}</td>
-                  <td className={`whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-medium ${r.lucro >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    {fmt(r.lucro)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${
-                      r.margem >= 30 ? "bg-emerald-50 text-emerald-700" : r.margem >= 15 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
-                    }`}>
-                      {pct(r.margem)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((r, i) => {
+                const avgMargem = (r.margemMin + r.margemMax) / 2;
+                return (
+                  <tr key={i} className="transition-colors duration-150 hover:bg-gray-50/60">
+                    <td className="whitespace-nowrap px-4 py-3 text-[13px] font-medium text-gray-900 capitalize">{r.month}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-gray-900">{fmt(r.receita)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-amber-600">{fmtRange(r.impMin, r.impMax)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums text-orange-600">{fmt(r.despesas)}</td>
+                    <td className={`whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-medium ${r.lucroMin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      {fmtRange(r.lucroMin, r.lucroMax)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                        avgMargem >= 30 ? "bg-emerald-50 text-emerald-700" : avgMargem >= 15 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
+                      }`}>
+                        {pctRange(r.margemMin, r.margemMax)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-gray-200 bg-gray-50/50">
                 <td className="whitespace-nowrap px-4 py-3 text-[13px] font-bold text-gray-900">Acumulado</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-gray-900">{fmt(acumulado.receita)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-amber-600">{fmt(acumulado.impostos)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-blue-600">{fmt(acumulado.receita - acumulado.impostos)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-orange-600">{fmt(acumulado.despesas)}</td>
-                <td className={`whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold ${acumulado.lucro >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                  {fmt(acumulado.lucro)}
+                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-gray-900">{fmt(acc.receita)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-amber-600">{fmtRange(acc.impMin, acc.impMax)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-orange-600">{fmt(acc.despesas)}</td>
+                <td className={`whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold ${acc.lucroMin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  {fmtRange(acc.lucroMin, acc.lucroMax)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-[13px] tabular-nums font-bold text-gray-500">
-                  {acumulado.receita > 0 ? pct((acumulado.lucro / acumulado.receita) * 100) : "—"}
+                  {acc.receita > 0 ? pctRange((acc.lucroMin / acc.receita) * 100, (acc.lucroMax / acc.receita) * 100) : "—"}
                 </td>
               </tr>
             </tfoot>
@@ -793,7 +872,6 @@ function ExpenseList({ expenses, recurringExpenses }: { expenses: Expense[]; rec
 
   const totalRecurring = recurringExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
-  // Group by category
   const byCategory = new Map<string, number>();
   for (const e of expenses) {
     const cat = e.category ?? "Outros";
@@ -804,7 +882,6 @@ function ExpenseList({ expenses, recurringExpenses }: { expenses: Expense[]; rec
 
   return (
     <div className="space-y-4">
-      {/* Operational costs summary */}
       {recurringExpenses.length > 0 && (
         <div className="rounded-xl border border-gray-200/80 bg-white p-5">
           <div className="flex items-center justify-between">
@@ -828,7 +905,6 @@ function ExpenseList({ expenses, recurringExpenses }: { expenses: Expense[]; rec
         </div>
       )}
 
-      {/* Category breakdown */}
       {categories.length > 0 && (
         <div className="rounded-xl border border-gray-200/80 bg-white p-5">
           <h3 className="text-[15px] font-semibold text-gray-900">Despesas por Categoria</h3>
@@ -850,7 +926,6 @@ function ExpenseList({ expenses, recurringExpenses }: { expenses: Expense[]; rec
         </div>
       )}
 
-      {/* Full expense list */}
       {expenses.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-14">
           <p className="text-[13px] font-medium text-gray-900">Nenhuma despesa</p>

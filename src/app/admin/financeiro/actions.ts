@@ -93,8 +93,8 @@ export async function deleteExpense(id: string) {
   return {};
 }
 
-export async function saveTaxRate(rate: number) {
-  if (rate < 0 || rate > 100) return { error: "Alíquota inválida." };
+export async function saveTaxRates(min: number, max: number) {
+  if (min < 0 || max > 100 || min > max) return { error: "Faixa de alíquota inválida." };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -102,7 +102,11 @@ export async function saveTaxRate(rate: number) {
 
   const { error } = await supabase
     .from("studio_settings")
-    .update({ tax_rate_percent: rate, updated_at: new Date().toISOString() })
+    .update({
+      tax_rate_min: min,
+      tax_rate_max: max,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", 1);
 
   if (error) return { error: error.message };
