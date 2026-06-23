@@ -114,6 +114,9 @@ export async function updateClient(
   const monthlyLimit = Number(formData.get("monthly_request_limit")) || 1;
   const notes = (formData.get("notes") as string) || null;
   const isActive = formData.get("is_active") === "on";
+  const planName = (formData.get("plan_name") as string) || null;
+  const monthlyAmountRaw = formData.get("monthly_amount") as string;
+  const monthlyAmount = monthlyAmountRaw ? parseFloat(monthlyAmountRaw) : null;
 
   if (!clientId || !name) {
     return { error: "ID e nome são obrigatórios." };
@@ -144,6 +147,8 @@ export async function updateClient(
       monthly_request_limit: monthlyLimit,
       notes,
       is_active: isActive,
+      plan_name: planName,
+      monthly_amount: monthlyAmount,
       updated_at: new Date().toISOString(),
     })
     .eq("id", clientId);

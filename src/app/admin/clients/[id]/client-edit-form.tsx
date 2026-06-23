@@ -14,6 +14,8 @@ type Client = {
   is_active: boolean;
   notes: string | null;
   contract_path: string | null;
+  plan_name: string | null;
+  monthly_amount: number | null;
 };
 
 export function ClientEditForm({ client }: { client: Client }) {
@@ -104,6 +106,36 @@ export function ClientEditForm({ client }: { client: Client }) {
               type="number"
               min={1}
               defaultValue={client.monthly_request_limit}
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="plan_name" className="block text-[13px] font-medium text-gray-600">
+              Plano
+            </label>
+            <input
+              id="plan_name"
+              name="plan_name"
+              type="text"
+              defaultValue={client.plan_name ?? ""}
+              placeholder="Ex: Básico, Premium"
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="monthly_amount" className="block text-[13px] font-medium text-gray-600">
+              Valor mensal (R$)
+            </label>
+            <input
+              id="monthly_amount"
+              name="monthly_amount"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={client.monthly_amount ?? ""}
+              placeholder="0,00"
               className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
             />
           </div>

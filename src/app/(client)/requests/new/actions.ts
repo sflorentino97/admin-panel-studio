@@ -46,6 +46,19 @@ export async function submitRequest(
 
   if (!defaultStatus) return { error: "Nenhum status padrão configurado." };
 
+  const customData: Record<string, unknown> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("custom_")) {
+      const fieldKey = key.slice(7);
+      if (customData[fieldKey]) {
+        const existing = customData[fieldKey];
+        customData[fieldKey] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+      } else {
+        customData[fieldKey] = value;
+      }
+    }
+  }
+
   const { error } = await supabase.from("requests").insert({
     client_id: profile.client_id,
     title,
@@ -55,6 +68,7 @@ export async function submitRequest(
     extra_info: extraInfo,
     status_id: defaultStatus.id,
     created_by: user.id,
+    custom_data: customData,
   });
 
   if (error) {

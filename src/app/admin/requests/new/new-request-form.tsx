@@ -4,14 +4,26 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { REQUEST_FORMATS } from "@/lib/formats";
+import { CustomFieldsRenderer } from "@/components/custom-fields-renderer";
 import { createRequest, type ActionState } from "../actions";
+
+type CustomField = {
+  id: string;
+  key: string;
+  label: string;
+  field_type: string;
+  options: string[] | null;
+  is_required: boolean;
+};
 
 export function NewRequestForm({
   clients,
   types,
+  customFields,
 }: {
   clients: { id: string; name: string }[];
   types: { id: string; name: string }[];
+  customFields: CustomField[];
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     createRequest,
@@ -132,6 +144,8 @@ export function NewRequestForm({
             </div>
           </div>
         </fieldset>
+
+        <CustomFieldsRenderer fields={customFields} />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

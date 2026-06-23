@@ -1,16 +1,38 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { REQUEST_FORMATS } from "@/lib/formats";
+import { CustomFieldsRenderer } from "@/components/custom-fields-renderer";
 import { submitRequest, type ActionState } from "./actions";
+import { createClient } from "@/lib/supabase/client";
+
+type CustomField = {
+  id: string;
+  key: string;
+  label: string;
+  field_type: string;
+  options: string[] | null;
+  is_required: boolean;
+};
 
 export default function NewRequestPage() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     submitRequest,
     null
   );
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("custom_field_definitions")
+      .select("id, key, label, field_type, options, is_required")
+      .eq("is_active", true)
+      .order("position")
+      .then(({ data }) => setCustomFields(data ?? []));
+  }, []);
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-in">
@@ -92,6 +114,8 @@ export default function NewRequestPage() {
             </div>
           </div>
         </fieldset>
+
+        <CustomFieldsRenderer fields={customFields} />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

@@ -18,10 +18,12 @@ export async function GET(request: Request) {
   const todayDay = today.getDate();
   const todayMonth = today.getMonth();
   const todayYear = today.getFullYear();
+  const todayISO = today.toISOString().slice(0, 10);
+  const currentPeriod = `${todayYear}-${String(todayMonth + 1).padStart(2, "0")}`;
 
   const { data: clients, error } = await supabase
     .from("clients")
-    .select("id, name, email, billing_day, payment_reminder_days_before")
+    .select("id, name, email, billing_day, payment_reminder_days_before, monthly_amount")
     .eq("is_active", true)
     .not("billing_day", "is", null)
     .not("email", "is", null);
@@ -32,11 +34,40 @@ export async function GET(request: Request) {
 
   let sent = 0;
   let skipped = 0;
+  let invoicesCreated = 0;
 
   for (const client of clients ?? []) {
     const billingDay = client.billing_day!;
     const reminderDaysBefore = client.payment_reminder_days_before ?? 3;
 
+    // Auto-generate invoice for clients with monthly_amount
+    if (client.monthly_amount && client.monthly_amount > 0) {
+      const { data: existingInvoice } = await supabase
+        .from("invoices")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("reference_period", currentPeriod)
+        .maybeSingle();
+
+      if (!existingInvoice) {
+        let dueDateObj = new Date(todayYear, todayMonth, billingDay);
+        if (dueDateObj < today) {
+          dueDateObj = new Date(todayYear, todayMonth + 1, billingDay);
+        }
+        const dueDate = dueDateObj.toISOString().slice(0, 10);
+
+        await supabase.from("invoices").insert({
+          client_id: client.id,
+          amount: client.monthly_amount,
+          due_date: dueDate,
+          reference_period: currentPeriod,
+          status: "sent",
+        });
+        invoicesCreated++;
+      }
+    }
+
+    // Payment reminder email
     let billingDate = new Date(todayYear, todayMonth, billingDay);
     if (billingDate <= today) {
       billingDate = new Date(todayYear, todayMonth + 1, billingDay);
@@ -96,5 +127,18 @@ export async function GET(request: Request) {
     sent++;
   }
 
-  return NextResponse.json({ sent, skipped, total: clients?.length ?? 0 });
+  // Mark overdue invoices
+  const { count: overdueCount } = await supabase
+    .from("invoices")
+    .update({ status: "overdue" })
+    .eq("status", "sent")
+    .lt("due_date", todayISO);
+
+  return NextResponse.json({
+    sent,
+    skipped,
+    invoicesCreated,
+    overdueMarked: overdueCount ?? 0,
+    total: clients?.length ?? 0,
+  });
 }
