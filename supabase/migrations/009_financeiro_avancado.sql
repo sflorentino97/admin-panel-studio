@@ -16,14 +16,41 @@ CREATE POLICY settings_admin ON studio_settings FOR ALL
   USING (is_admin()) WITH CHECK (is_admin());
 
 -- 2. View financeira enriquecida (substitui a anterior)
+-- RECEITA AUTOMÁTICA: cliente ativo + monthly_amount = receita garantida
+-- Faturas são opcionais para rastreamento, não para contabilizar receita.
 CREATE OR REPLACE VIEW financial_overview WITH (security_invoker = on) AS
 SELECT
+  -- MRR = soma de todos os clientes ativos com plano
   (SELECT coalesce(sum(monthly_amount),0)
-     FROM clients WHERE is_active)                                                     AS mrr,
+     FROM clients WHERE is_active AND monthly_amount > 0)                               AS mrr,
 
-  (SELECT coalesce(sum(amount),0) FROM invoices
-     WHERE status='paid'
-       AND date_trunc('month', paid_at) = date_trunc('month', now()))                  AS receita_mes,
+  -- Receita do mês = MRR (automático dos clientes ativos)
+  -- + faturas avulsas pagas (projetos extras, one-off)
+  (SELECT coalesce(sum(monthly_amount),0)
+     FROM clients WHERE is_active AND monthly_amount > 0)
+  +
+  (SELECT coalesce(sum(i.amount),0) FROM invoices i
+     WHERE i.status = 'paid'
+       AND date_trunc('month', i.paid_at) = date_trunc('month', now())
+       AND NOT EXISTS (
+         SELECT 1 FROM clients c
+         WHERE c.id = i.client_id AND c.is_active AND c.monthly_amount > 0
+         AND i.reference_period IS NOT NULL
+       ))                                                                                AS receita_mes,
+
+  -- Receita recorrente (só clientes ativos)
+  (SELECT coalesce(sum(monthly_amount),0)
+     FROM clients WHERE is_active AND monthly_amount > 0)                               AS receita_recorrente,
+
+  -- Receita extra (faturas avulsas pagas no mês, excluindo as de recorrência)
+  (SELECT coalesce(sum(i.amount),0) FROM invoices i
+     WHERE i.status = 'paid'
+       AND date_trunc('month', i.paid_at) = date_trunc('month', now())
+       AND NOT EXISTS (
+         SELECT 1 FROM clients c
+         WHERE c.id = i.client_id AND c.is_active AND c.monthly_amount > 0
+         AND i.reference_period IS NOT NULL
+       ))                                                                                AS receita_extra,
 
   (SELECT coalesce(sum(amount),0) FROM invoices
      WHERE status IN ('sent','overdue'))                                                AS a_receber,
@@ -47,6 +74,10 @@ SELECT
 
   (SELECT count(*) FROM clients WHERE is_active)                                        AS total_clientes_ativos,
 
+  (SELECT count(*) FROM clients WHERE is_active AND monthly_amount > 0)                 AS clientes_com_plano,
+
+  -- Mês anterior: usa mesma lógica de MRR (contagem de ativos naquele mês)
+  -- Como não temos snapshot histórico, usamos faturas pagas como proxy
   (SELECT coalesce(sum(amount),0) FROM invoices
      WHERE status = 'paid'
        AND paid_at >= date_trunc('month', now()) - interval '1 month'

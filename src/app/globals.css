@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: var(--font-helvetica), "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
   --color-brand: #9B29FF;
   --color-brand-hover: #8A1FEE;
   --color-brand-active: #7A15DD;

@@ -45,7 +45,10 @@ export default function LoginPage() {
         .eq("id", user.id)
         .single();
 
-      window.location.href = profile?.role === "admin" ? "/admin" : "/";
+      window.location.href =
+        profile?.role === "admin" || profile?.role === "member"
+          ? "/admin"
+          : "/";
     }
   }
 
@@ -54,11 +57,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         <div className="rounded-xl border border-gray-200/80 bg-white p-8 shadow-lg">
           <div className="text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center">
-              <Image src="/logo-icon.svg" alt="Florentino" width={48} height={48} />
+            <div className="mx-auto flex items-center justify-center">
+              <Image src="/logo-dark.svg" alt="Florentino" width={200} height={34} priority />
             </div>
-            <h1 className="mt-4 text-xl font-bold text-gray-900">Florentino</h1>
-            <p className="mt-1 text-[13px] text-gray-500">Portal de Clientes</p>
+            <p className="mt-3 text-[13px] text-gray-500">Portal de Clientes</p>
           </div>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-4">

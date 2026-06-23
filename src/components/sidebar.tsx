@@ -157,12 +157,8 @@ export function Sidebar({
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Workspace header */}
-      <div className="flex h-[60px] items-center gap-3 px-4 border-b border-white/[0.06]">
-        <Image src="/logo-icon.svg" alt="" width={28} height={28} className="flex-shrink-0" />
-        <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-white/95">Florentino</p>
-          <p className="text-[11px] text-white/40">{role === "client" ? "Portal" : "Workspace"}</p>
-        </div>
+      <div className="flex h-[60px] items-center px-4 border-b border-white/[0.06]">
+        <Image src="/logo-light.svg" alt="Florentino" width={140} height={24} className="flex-shrink-0" />
       </div>
 
       {/* Nav */}
@@ -238,10 +234,7 @@ export function Sidebar({
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
-        <div className="flex items-center gap-2.5">
-          <Image src="/logo-icon.svg" alt="" width={24} height={24} />
-          <span className="text-[15px] font-semibold text-gray-900">Florentino</span>
-        </div>
+        <Image src="/logo-dark.svg" alt="Florentino" width={120} height={20} />
       </div>
 
       {/* Mobile overlay */}

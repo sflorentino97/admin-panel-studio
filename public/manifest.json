@@ -1,11 +1,11 @@
 {
-  "name": "Studio — Portal de Clientes",
-  "short_name": "Studio",
+  "name": "Florentino — Portal de Clientes",
+  "short_name": "Florentino",
   "description": "Portal de gerenciamento de demandas do studio de design",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1e40af",
+  "theme_color": "#9B29FF",
   "orientation": "any",
   "icons": [
     {

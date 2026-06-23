@@ -12,6 +12,8 @@ import {
 type Overview = {
   mrr: number;
   receita_mes: number;
+  receita_recorrente: number;
+  receita_extra: number;
   a_receber: number;
   em_atraso: number;
   despesas_mes: number;
@@ -20,6 +22,7 @@ type Overview = {
   tax_rate_min: number;
   tax_rate_max: number;
   total_clientes_ativos: number;
+  clientes_com_plano: number;
   receita_mes_anterior: number;
   despesas_mes_anterior: number;
 } | null;
@@ -106,6 +109,8 @@ export function FinanceiroView({
 
   const mrr = Number(overview?.mrr ?? 0);
   const receita = Number(overview?.receita_mes ?? 0);
+  const receitaRecorrente = Number(overview?.receita_recorrente ?? 0);
+  const receitaExtra = Number(overview?.receita_extra ?? 0);
   const aReceber = Number(overview?.a_receber ?? 0);
   const emAtraso = Number(overview?.em_atraso ?? 0);
   const despesasTotal = Number(overview?.despesas_mes ?? 0);
@@ -114,6 +119,7 @@ export function FinanceiroView({
   const taxMin = Number(overview?.tax_rate_min ?? 7);
   const taxMax = Number(overview?.tax_rate_max ?? 14);
   const totalClientes = Number(overview?.total_clientes_ativos ?? 0);
+  const clientesComPlano = Number(overview?.clientes_com_plano ?? 0);
   const receitaAnterior = Number(overview?.receita_mes_anterior ?? 0);
   const despesasAnterior = Number(overview?.despesas_mes_anterior ?? 0);
 
@@ -142,7 +148,7 @@ export function FinanceiroView({
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-gray-900">Financeiro</h1>
           <p className="mt-0.5 text-[13px] text-gray-500">
-            {totalClientes} cliente{totalClientes !== 1 ? "s" : ""} ativo{totalClientes !== 1 ? "s" : ""} · Imposto {pct(taxMin)} – {pct(taxMax)}
+            {totalClientes} cliente{totalClientes !== 1 ? "s" : ""} ativo{totalClientes !== 1 ? "s" : ""} · {clientesComPlano} com plano · Imposto {pct(taxMin)} – {pct(taxMax)}
           </p>
         </div>
         <TaxRateEditor initialMin={taxMin} initialMax={taxMax} />
@@ -151,6 +157,13 @@ export function FinanceiroView({
       {/* KPI Grid */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KPICard label="Receita Bruta" value={fmt(receita)} color="text-emerald-600" dot="bg-emerald-500" delta={receitaDelta} />
+        <KPICard
+          label="Recorrente"
+          value={fmt(receitaRecorrente)}
+          sub={`${clientesComPlano} cliente${clientesComPlano !== 1 ? "s" : ""} com plano`}
+          color="text-brand"
+          dot="bg-brand"
+        />
         <KPICard
           label="Impostos (est.)"
           value={fmtRange(impostosMin, impostosMax)}
@@ -164,7 +177,6 @@ export function FinanceiroView({
           color="text-blue-600"
           dot="bg-blue-500"
         />
-        <KPICard label="MRR" value={fmt(mrr)} sub={`${totalClientes} clientes`} color="text-brand" dot="bg-brand" />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KPICard label="Custos Operacionais" value={fmt(custosOp)} color="text-orange-600" dot="bg-orange-500" />
@@ -183,23 +195,27 @@ export function FinanceiroView({
         />
       </div>
 
-      {/* Pendências */}
-      {(aReceber > 0 || emAtraso > 0) && (
-        <div className="mt-4 flex gap-3">
-          {aReceber > 0 && (
-            <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-[12px] font-medium text-blue-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-              A receber: {fmt(aReceber)}
-            </div>
-          )}
-          {emAtraso > 0 && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-              Em atraso: {fmt(emAtraso)}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Pendências / Info */}
+      <div className="mt-4 flex flex-wrap gap-3">
+        {receitaExtra > 0 && (
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-[12px] font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Receita extra: {fmt(receitaExtra)}
+          </div>
+        )}
+        {aReceber > 0 && (
+          <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-[12px] font-medium text-blue-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+            A receber: {fmt(aReceber)}
+          </div>
+        )}
+        {emAtraso > 0 && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+            Em atraso: {fmt(emAtraso)}
+          </div>
+        )}
+      </div>
 
       {/* Tabs */}
       <div className="mt-8 flex items-center justify-between">

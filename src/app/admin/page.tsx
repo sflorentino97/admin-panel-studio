@@ -10,6 +10,7 @@ export default async function AdminDashboard() {
     { count: totalRequests },
     { data: avgMetrics },
     { data: recentRequests },
+    { data: financialData },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("request_statuses").select("id, name, category, color").eq("is_active", true),
@@ -18,6 +19,7 @@ export default async function AdminDashboard() {
     supabase.from("requests")
       .select("id, title, status_id, created_at, clients(name), request_statuses(name, color)")
       .order("created_at", { ascending: false }).limit(5),
+    supabase.from("financial_overview").select("mrr, receita_mes, despesas_mes, clientes_com_plano").single(),
   ]);
 
   const activeStatusIds = (statuses ?? []).filter(s => s.category === "active").map(s => s.id);
@@ -70,6 +72,29 @@ export default async function AdminDashboard() {
         <StatCard label="Na fila" value={queuedRequests ?? 0} dot="bg-gray-400" accent="text-gray-600" />
         <StatCard label="Concluídas" value={`${completionRate}%`} dot="bg-emerald-500" accent="text-emerald-600" />
       </div>
+
+      {financialData && Number(financialData.mrr) > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard
+            label="MRR"
+            value={Number(financialData.mrr).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            dot="bg-emerald-500"
+            accent="text-emerald-600"
+          />
+          <StatCard
+            label="Receita do mês"
+            value={Number(financialData.receita_mes).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            dot="bg-blue-500"
+            accent="text-blue-600"
+          />
+          <StatCard
+            label="Despesas do mês"
+            value={Number(financialData.despesas_mes).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            dot="bg-orange-500"
+            accent="text-orange-600"
+          />
+        </div>
+      )}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
