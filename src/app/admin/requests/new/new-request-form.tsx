@@ -98,11 +98,6 @@ export function NewRequestForm({
               </select>
             </div>
 
-            <div>
-              <label htmlFor="due_date" className="block text-[13px] font-medium text-gray-600">Prazo</label>
-              <input id="due_date" name="due_date" type="date" className="mt-1.5 block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-[13px] transition-all duration-150 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10" />
-            </div>
-
             {teamMembers.length > 0 && (
               <div>
                 <label htmlFor="assigned_to" className="block text-[13px] font-medium text-gray-600">Responsável</label>

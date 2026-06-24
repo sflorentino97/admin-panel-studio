@@ -24,7 +24,7 @@ export function ClientDashboardView({
   statuses: RequestStatus[];
 }) {
   const [view, setView] = useState<"kanban" | "list">("kanban");
-  const activeRequest = requests.find((r) => r.status_category === "active");
+  const activeRequest = requests.find((r) => r.status_category === "active" || r.status_category === "review");
   const doneCount = requests.filter((r) => r.status_category === "done").length;
 
   return (
@@ -56,6 +56,15 @@ export function ClientDashboardView({
           <p className="mt-2 truncate text-[13px] font-semibold text-gray-900">
             {activeRequest ? activeRequest.title : "Nenhum"}
           </p>
+          {activeRequest?.started_at && (() => {
+            const info = getDeadlineInfo(activeRequest.started_at);
+            if (!info) return null;
+            return (
+              <p className={`mt-1 text-[11px] font-medium ${info.color}`}>
+                {info.icon} {info.label}
+              </p>
+            );
+          })()}
         </div>
 
         <div className="rounded-xl border border-gray-200/80 bg-white p-4 transition-shadow duration-150 hover:shadow-sm">
@@ -158,6 +167,7 @@ export function ClientDashboardView({
                       <tr className="border-b border-gray-100">
                         <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Título</th>
                         <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Status</th>
+                        <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Prazo</th>
                         <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Criado</th>
                       </tr>
                     </thead>
@@ -172,6 +182,18 @@ export function ClientDashboardView({
                               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: req.status_color }} />
                               <span className="text-[12px] font-medium text-gray-600">{req.status_name}</span>
                             </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12px]">
+                            {req.started_at && (req.status_category === "active" || req.status_category === "review") ? (() => {
+                              const info = getDeadlineInfo(req.started_at);
+                              return info ? (
+                                <span className={`font-medium ${info.color}`}>{info.label}</span>
+                              ) : <span className="text-gray-400">—</span>;
+                            })() : req.status_category === "done" ? (
+                              <span className="text-emerald-500 font-medium">Concluído</span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-400">
                             {new Date(req.created_at).toLocaleDateString("pt-BR")}
@@ -199,6 +221,29 @@ export function ClientDashboardView({
       </div>
     </div>
   );
+}
+
+function getDeadlineInfo(startedAt: string) {
+  const deadline = new Date(new Date(startedAt).getTime() + 48 * 60 * 60 * 1000);
+  const remainMs = deadline.getTime() - Date.now();
+  const remainH = remainMs / (1000 * 60 * 60);
+
+  if (remainH < 0) {
+    const over = Math.abs(Math.floor(remainH));
+    return { label: `Atrasado ${over}h`, color: "text-red-600", icon: "⏰" };
+  }
+  if (remainH <= 4) {
+    const h = Math.floor(remainH);
+    const m = Math.floor((remainH % 1) * 60);
+    return { label: `${h}h${m > 0 ? `${m}m` : ""} restantes`, color: "text-red-500", icon: "⏱️" };
+  }
+  if (remainH <= 12) {
+    return { label: `${Math.floor(remainH)}h restantes`, color: "text-amber-600", icon: "⏱️" };
+  }
+  if (remainH <= 24) {
+    return { label: `${Math.floor(remainH)}h restantes`, color: "text-yellow-600", icon: "⏱️" };
+  }
+  return { label: `${Math.floor(remainH)}h restantes`, color: "text-emerald-600", icon: "⏱️" };
 }
 
 function formatNextBilling(billingDay: number): string {

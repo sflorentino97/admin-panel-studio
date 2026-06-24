@@ -175,10 +175,12 @@ export function Sidebar({
   userName,
   role,
   avatarUrl,
+  overdueCount = 0,
 }: {
   userName: string;
   role: "admin" | "member" | "client";
   avatarUrl?: string | null;
+  overdueCount?: number;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -231,6 +233,11 @@ export function Sidebar({
                 {item.icon}
               </span>
               {item.label}
+              {item.href === "/admin/requests" && overdueCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold tabular-nums text-white">
+                  {overdueCount}
+                </span>
+              )}
             </Link>
           );
         })}

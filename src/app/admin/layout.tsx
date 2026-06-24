@@ -23,12 +23,27 @@ export default async function AdminLayout({
   const role = profile?.role;
   if (role !== "admin" && role !== "member") redirect("/");
 
-  let avatarUrl: string | null = null;
-  if (profile?.avatar_path) {
-    const { data } = await supabase.storage
-      .from("avatars")
-      .createSignedUrl(profile.avatar_path, 60 * 60);
-    avatarUrl = data?.signedUrl ?? null;
+  const overdueThreshold = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const [avatarResult, statusesResult] = await Promise.all([
+    profile?.avatar_path
+      ? supabase.storage.from("avatars").createSignedUrl(profile.avatar_path, 60 * 60)
+      : Promise.resolve({ data: null }),
+    supabase.from("request_statuses").select("id, category").eq("is_active", true),
+  ]);
+
+  const avatarUrl = avatarResult.data?.signedUrl ?? null;
+  const activeIds = (statusesResult.data ?? [])
+    .filter(s => s.category === "active" || s.category === "review")
+    .map(s => s.id);
+
+  let overdueCount = 0;
+  if (activeIds.length > 0) {
+    const { count } = await supabase.from("requests")
+      .select("*", { count: "exact", head: true })
+      .in("status_id", activeIds)
+      .not("started_at", "is", null)
+      .lt("started_at", overdueThreshold);
+    overdueCount = count ?? 0;
   }
 
   return (
@@ -37,6 +52,7 @@ export default async function AdminLayout({
         userName={profile?.full_name ?? user.email ?? "Admin"}
         role={role}
         avatarUrl={avatarUrl}
+        overdueCount={overdueCount}
       />
       <main className="lg:pl-[248px]">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">

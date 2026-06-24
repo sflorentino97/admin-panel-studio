@@ -178,10 +178,13 @@ export function RequestDetail({
               )}
             </div>
           </div>
-          {request.due_date && (
+          {request.started_at && request.status_category !== "done" && request.status_category !== "cancelled" && (
+            <DeadlineBadge startedAt={request.started_at} />
+          )}
+          {request.status_category === "done" && request.due_date && (
             <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-2 text-[13px]">
               <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-gray-600">Prazo: {new Date(request.due_date).toLocaleDateString("pt-BR")}</span>
             </div>
@@ -331,6 +334,41 @@ function TimeBox({ label, date, icon }: { label: string; date: string | null; ic
       <p className="mt-1 text-[13px] font-semibold tabular-nums text-gray-900">
         {date ? new Date(date).toLocaleDateString("pt-BR") : "—"}
       </p>
+    </div>
+  );
+}
+
+function DeadlineBadge({ startedAt }: { startedAt: string }) {
+  const deadline = new Date(new Date(startedAt).getTime() + 48 * 60 * 60 * 1000);
+  const remainMs = deadline.getTime() - Date.now();
+  const remainH = remainMs / (1000 * 60 * 60);
+
+  let label: string;
+  let style: string;
+
+  if (remainH < 0) {
+    const over = Math.abs(Math.floor(remainH));
+    label = `Atrasado ${over}h`;
+    style = "bg-red-100 text-red-700 ring-1 ring-red-200";
+  } else if (remainH <= 4) {
+    const h = Math.floor(remainH);
+    const m = Math.floor((remainH % 1) * 60);
+    label = `${h}h${m > 0 ? `${m}m restantes` : " restantes"}`;
+    style = "bg-red-50 text-red-700 ring-1 ring-red-100";
+  } else if (remainH <= 12) {
+    label = `${Math.floor(remainH)}h restantes`;
+    style = "bg-amber-50 text-amber-700 ring-1 ring-amber-100";
+  } else {
+    label = `${Math.floor(remainH)}h restantes`;
+    style = "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100";
+  }
+
+  return (
+    <div className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium ${style}`}>
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {label}
     </div>
   );
 }

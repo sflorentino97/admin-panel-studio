@@ -3,10 +3,27 @@ import { requireAdmin } from "@/lib/auth-guard";
 
 export default async function ClientsPage() {
   const { supabase } = await requireAdmin();
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("id, name, email, phone, is_active, billing_day, created_at")
-    .order("name");
+  const [{ data: clients }, { data: statuses }] = await Promise.all([
+    supabase.from("clients")
+      .select("id, name, email, phone, is_active, billing_day, created_at")
+      .order("name"),
+    supabase.from("request_statuses").select("id, category").eq("is_active", true),
+  ]);
+
+  const activeStatusIds = (statuses ?? []).filter(s => s.category === "active" || s.category === "review").map(s => s.id);
+  let activeCountByClient: Record<string, number> = {};
+
+  if (activeStatusIds.length > 0 && clients && clients.length > 0) {
+    const { data: activeRequests } = await supabase
+      .from("requests")
+      .select("client_id")
+      .in("status_id", activeStatusIds);
+    if (activeRequests) {
+      for (const r of activeRequests) {
+        activeCountByClient[r.client_id] = (activeCountByClient[r.client_id] || 0) + 1;
+      }
+    }
+  }
 
   return (
     <div>
@@ -37,6 +54,7 @@ export default async function ClientsPage() {
                 <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">E-mail</th>
                 <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden sm:table-cell">Telefone</th>
                 <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden md:table-cell">Cobrança</th>
+                <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden sm:table-cell">Ativas</th>
                 <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Status</th>
               </tr>
             </thead>
@@ -64,6 +82,16 @@ export default async function ClientsPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-[13px] tabular-nums text-gray-500 hidden md:table-cell">
                       {client.billing_day ? `Dia ${client.billing_day}` : "—"}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 hidden sm:table-cell">
+                      {activeCountByClient[client.id] ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          {activeCountByClient[client.id]}
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-gray-300">0</span>
+                      )}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <span className="inline-flex items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 rounded-full ${client.is_active ? "bg-emerald-500" : "bg-gray-400"}`} />
@@ -76,7 +104,7 @@ export default async function ClientsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-14 text-center">
+                  <td colSpan={6} className="px-4 py-14 text-center">
                     <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-gray-100">
                       <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />

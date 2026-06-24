@@ -73,14 +73,29 @@ function getClientColor(name: string) {
   return clientColors[Math.abs(hash) % clientColors.length];
 }
 
-function isDueSoon(dueDate: string | null | undefined): "overdue" | "soon" | null {
-  if (!dueDate) return null;
-  const due = new Date(dueDate);
-  const now = new Date();
-  const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return "overdue";
-  if (diffDays <= 2) return "soon";
-  return null;
+function getDeadlineInfo(startedAt: string | null, statusCategory: string) {
+  if (!startedAt || statusCategory === "done" || statusCategory === "cancelled" || statusCategory === "backlog") return null;
+
+  const deadline = new Date(new Date(startedAt).getTime() + 48 * 60 * 60 * 1000);
+  const remainMs = deadline.getTime() - Date.now();
+  const remainH = remainMs / (1000 * 60 * 60);
+
+  if (remainH < 0) {
+    const over = Math.abs(Math.floor(remainH));
+    return { label: `Atrasado ${over}h`, style: "bg-red-100 text-red-700", pulse: true };
+  }
+  if (remainH <= 4) {
+    const h = Math.floor(remainH);
+    const m = Math.floor((remainH % 1) * 60);
+    return { label: `${h}h${m > 0 ? `${m}m` : ""}`, style: "bg-red-50 text-red-600", pulse: false };
+  }
+  if (remainH <= 12) {
+    return { label: `${Math.floor(remainH)}h`, style: "bg-amber-50 text-amber-700", pulse: false };
+  }
+  if (remainH <= 24) {
+    return { label: `${Math.floor(remainH)}h`, style: "bg-yellow-50 text-yellow-700", pulse: false };
+  }
+  return { label: `${Math.floor(remainH)}h`, style: "bg-emerald-50 text-emerald-700", pulse: false };
 }
 
 function AssigneeAvatar({
@@ -292,7 +307,7 @@ export function KanbanBoard({
               {items.map((req) => {
                 const priority = req.priority ?? 0;
                 const pCfg = priorityConfig[priority] ?? priorityConfig[0];
-                const dueStatus = req.status_category !== "done" ? isDueSoon(req.due_date) : null;
+                const deadlineInfo = getDeadlineInfo(req.started_at, req.status_category);
 
                 return (
                   <div
@@ -369,14 +384,12 @@ export function KanbanBoard({
                             {formatDuration(req.started_at, req.completed_at)}
                           </span>
                         )}
-                        {dueStatus && req.due_date && (
-                          <span className={`inline-flex items-center gap-0.5 font-medium ${
-                            dueStatus === "overdue" ? "text-red-500" : "text-amber-500"
-                          }`}>
+                        {deadlineInfo && (
+                          <span className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium ${deadlineInfo.style} ${deadlineInfo.pulse ? "animate-pulse" : ""}`}>
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            {dueStatus === "overdue" ? "Atrasado" : formatDate(req.due_date)}
+                            {deadlineInfo.label}
                           </span>
                         )}
                       </div>

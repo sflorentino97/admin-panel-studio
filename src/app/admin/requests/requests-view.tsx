@@ -320,6 +320,7 @@ export function AdminRequestsView({
                     <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden sm:table-cell">Responsável</th>
                     <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden sm:table-cell">Prioridade</th>
                     <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden md:table-cell">Tipo</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 hidden sm:table-cell">Prazo</th>
                     <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500">Criado</th>
                   </tr>
                 </thead>
@@ -362,6 +363,9 @@ export function AdminRequestsView({
                         <td className="whitespace-nowrap px-4 py-3 text-[13px] text-gray-500 hidden md:table-cell">
                           {req.type_name ?? "—"}
                         </td>
+                        <td className="whitespace-nowrap px-4 py-3 hidden sm:table-cell">
+                          <DeadlineCell startedAt={req.started_at} category={req.status_category} />
+                        </td>
                         <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-400">
                           {new Date(req.created_at).toLocaleDateString("pt-BR")}
                         </td>
@@ -375,5 +379,40 @@ export function AdminRequestsView({
         )}
       </div>
     </div>
+  );
+}
+
+function DeadlineCell({ startedAt, category }: { startedAt: string | null; category: string }) {
+  if (!startedAt || category === "done" || category === "cancelled" || category === "backlog") {
+    return <span className="text-[12px] text-gray-300">—</span>;
+  }
+
+  const deadline = new Date(new Date(startedAt).getTime() + 48 * 60 * 60 * 1000);
+  const remainH = (deadline.getTime() - Date.now()) / (1000 * 60 * 60);
+
+  let label: string;
+  let style: string;
+
+  if (remainH < 0) {
+    label = `Atrasado ${Math.abs(Math.floor(remainH))}h`;
+    style = "bg-red-100 text-red-700";
+  } else if (remainH <= 4) {
+    label = `${Math.floor(remainH)}h${Math.floor((remainH % 1) * 60)}m`;
+    style = "bg-red-50 text-red-600";
+  } else if (remainH <= 12) {
+    label = `${Math.floor(remainH)}h`;
+    style = "bg-amber-50 text-amber-700";
+  } else {
+    label = `${Math.floor(remainH)}h`;
+    style = "bg-emerald-50 text-emerald-700";
+  }
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${style}`}>
+      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {label}
+    </span>
   );
 }

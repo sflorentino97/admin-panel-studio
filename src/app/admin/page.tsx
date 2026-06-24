@@ -26,10 +26,16 @@ export default async function AdminDashboard() {
   const queuedStatusIds = (statuses ?? []).filter(s => s.category === "backlog").map(s => s.id);
   const doneStatusIds = (statuses ?? []).filter(s => s.category === "done").map(s => s.id);
 
+  const reviewStatusIds = (statuses ?? []).filter(s => s.category === "review").map(s => s.id);
+  const activeAndReviewIds = [...activeStatusIds, ...reviewStatusIds];
+
+  const overdueThreshold = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
   const [
     { count: activeRequests },
     { count: queuedRequests },
     { count: doneRequests },
+    { data: overdueRequests },
   ] = await Promise.all([
     activeStatusIds.length > 0
       ? supabase.from("requests").select("*", { count: "exact", head: true }).in("status_id", activeStatusIds)
@@ -40,6 +46,15 @@ export default async function AdminDashboard() {
     doneStatusIds.length > 0
       ? supabase.from("requests").select("*", { count: "exact", head: true }).in("status_id", doneStatusIds)
       : { count: 0 },
+    activeAndReviewIds.length > 0
+      ? supabase.from("requests")
+          .select("id, title, started_at, clients(name)")
+          .in("status_id", activeAndReviewIds)
+          .not("started_at", "is", null)
+          .lt("started_at", overdueThreshold)
+          .order("started_at")
+          .limit(10)
+      : { data: [] },
   ]);
 
   const completionRate = totalRequests && totalRequests > 0
@@ -93,6 +108,37 @@ export default async function AdminDashboard() {
             dot="bg-orange-500"
             accent="text-orange-600"
           />
+        </div>
+      )}
+
+      {overdueRequests && overdueRequests.length > 0 && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <h2 className="text-[14px] font-semibold text-red-800">
+              {overdueRequests.length} {overdueRequests.length === 1 ? "demanda atrasada" : "demandas atrasadas"} (acima de 48h)
+            </h2>
+          </div>
+          <ul className="mt-3 space-y-1.5">
+            {overdueRequests.map((r) => {
+              const hoursOver = Math.floor((Date.now() - new Date(r.started_at!).getTime() - 48 * 60 * 60 * 1000) / (60 * 60 * 1000));
+              return (
+                <li key={r.id}>
+                  <Link href={`/admin/requests/${r.id}`} className="flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-red-100/60">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[13px] font-medium text-red-900">{r.title}</span>
+                      <span className="ml-2 text-[12px] text-red-600">{(r.clients as unknown as { name: string })?.name}</span>
+                    </div>
+                    <span className="ml-3 flex-shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                      +{hoursOver}h atraso
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
