@@ -32,7 +32,19 @@ export function ClientEditForm({ client }: { client: Client }) {
 
   return (
   <>
-    <form action={formAction} className="mt-8 space-y-5">
+    <div className="mt-4 flex items-center gap-3">
+      <Link
+        href={`/admin/clients/${client.id}/integrations`}
+        className="inline-flex items-center gap-2 rounded-lg border border-gray-200/80 bg-white px-4 py-2.5 text-[13px] font-medium text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+        </svg>
+        Integrações
+      </Link>
+    </div>
+
+    <form action={formAction} className="mt-4 space-y-5">
       <input type="hidden" name="client_id" value={client.id} />
 
       {state?.error && (

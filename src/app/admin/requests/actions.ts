@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { syncOutbound } from "@/lib/integrations/sync";
 
 export type ActionState = { error?: string } | null;
 
@@ -142,6 +144,11 @@ export async function updateRequestStatus(
   if (error) {
     return { error: error.message };
   }
+
+  // Fire-and-forget: push status to external tools (Notion/ClickUp/Asana)
+  syncOutbound(createAdminClient(), requestId, newStatusId).catch((err) =>
+    console.error("Outbound sync error:", err)
+  );
 
   revalidatePath("/admin/requests");
   revalidatePath("/admin");

@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useState, useRef, useEffect, type DragEvent } from "react";
 import Link from "next/link";
 import type { RequestStatus } from "@/lib/types";
+
+export type KanbanTeamMember = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
 
 export type KanbanRequest = {
   id: string;
@@ -18,7 +24,9 @@ export type KanbanRequest = {
   due_date?: string | null;
   client_name?: string;
   type_name?: string;
+  assigned_to?: string | null;
   assigned_to_name?: string | null;
+  assigned_to_avatar_url?: string | null;
 };
 
 const priorityConfig: Record<number, { border: string; indicator: string; label: string }> = {
@@ -52,6 +60,135 @@ function isDueSoon(dueDate: string | null | undefined): "overdue" | "soon" | nul
   return null;
 }
 
+function AssigneeAvatar({
+  name,
+  avatarUrl,
+  size = "sm",
+}: {
+  name: string | null;
+  avatarUrl: string | null;
+  size?: "sm" | "md";
+}) {
+  const dim = size === "md" ? "h-6 w-6" : "h-4 w-4";
+  const textSize = size === "md" ? "text-[10px]" : "text-[8px]";
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name ?? ""}
+        className={`${dim} rounded-full object-cover ring-1 ring-white`}
+      />
+    );
+  }
+
+  if (name) {
+    return (
+      <span
+        className={`flex ${dim} items-center justify-center rounded-full bg-gradient-to-br from-brand/80 to-brand-hover text-white ${textSize} font-bold ring-1 ring-white`}
+      >
+        {name.charAt(0).toUpperCase()}
+      </span>
+    );
+  }
+
+  return null;
+}
+
+function AssigneeSelector({
+  requestId,
+  currentAssignee,
+  teamMembers,
+  onAssign,
+  assignedName,
+  assignedAvatarUrl,
+}: {
+  requestId: string;
+  currentAssignee: string | null | undefined;
+  teamMembers: KanbanTeamMember[];
+  onAssign: (requestId: string, assignedTo: string) => void;
+  assignedName: string | null | undefined;
+  assignedAvatarUrl: string | null | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setOpen(!open);
+        }}
+        className="flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-gray-100"
+        title={currentAssignee ? `Responsável: ${assignedName}` : "Atribuir responsável"}
+      >
+        {currentAssignee ? (
+          <>
+            <AssigneeAvatar name={assignedName ?? null} avatarUrl={assignedAvatarUrl ?? null} />
+            <span className="text-[11px] text-gray-500 max-w-[60px] truncate">
+              {assignedName?.split(" ")[0]}
+            </span>
+          </>
+        ) : (
+          <span className="flex h-4 w-4 items-center justify-center rounded-full border border-dashed border-gray-300 text-[9px] text-gray-400">
+            +
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg animate-scale-in">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAssign(requestId, "");
+              setOpen(false);
+            }}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition-colors hover:bg-gray-50 ${
+              !currentAssignee ? "text-brand font-medium" : "text-gray-500"
+            }`}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[9px] text-gray-400">
+              —
+            </span>
+            Nenhum
+          </button>
+          {teamMembers.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssign(requestId, m.id);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition-colors hover:bg-gray-50 ${
+                currentAssignee === m.id ? "text-brand font-medium bg-brand-50/30" : "text-gray-700"
+              }`}
+            >
+              <AssigneeAvatar name={m.full_name} avatarUrl={m.avatar_url} size="md" />
+              <span className="truncate">{m.full_name ?? "Sem nome"}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function KanbanBoard({
   requests,
   statuses,
@@ -59,6 +196,8 @@ export function KanbanBoard({
   showClientName = false,
   readOnly = false,
   linkPrefix,
+  teamMembers,
+  onAssign,
 }: {
   requests: KanbanRequest[];
   statuses: RequestStatus[];
@@ -66,6 +205,8 @@ export function KanbanBoard({
   showClientName?: boolean;
   readOnly?: boolean;
   linkPrefix?: string;
+  teamMembers?: KanbanTeamMember[];
+  onAssign?: (requestId: string, assignedTo: string) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -177,14 +318,24 @@ export function KanbanBoard({
                       )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
-                        {req.assigned_to_name && (
+                        {teamMembers && onAssign ? (
+                          <AssigneeSelector
+                            requestId={req.id}
+                            currentAssignee={req.assigned_to}
+                            teamMembers={teamMembers}
+                            onAssign={onAssign}
+                            assignedName={req.assigned_to_name}
+                            assignedAvatarUrl={req.assigned_to_avatar_url}
+                          />
+                        ) : req.assigned_to_name ? (
                           <span className="inline-flex items-center gap-1">
-                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[8px] font-bold text-gray-600">
-                              {req.assigned_to_name.charAt(0).toUpperCase()}
-                            </span>
+                            <AssigneeAvatar
+                              name={req.assigned_to_name}
+                              avatarUrl={req.assigned_to_avatar_url ?? null}
+                            />
                             <span className="text-gray-500">{req.assigned_to_name.split(" ")[0]}</span>
                           </span>
-                        )}
+                        ) : null}
                         <span>{formatDate(req.created_at)}</span>
                         {req.completed_at && req.status_category === "done" && (
                           <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-600 font-medium">

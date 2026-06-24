@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { KanbanBoard, type KanbanRequest } from "@/components/kanban-board";
+import { KanbanBoard, type KanbanRequest, type KanbanTeamMember } from "@/components/kanban-board";
 import type { RequestStatus } from "@/lib/types";
 import { updateRequestStatus, assignRequest } from "./actions";
 
@@ -13,6 +13,7 @@ type RequestItem = KanbanRequest & {
   type_name?: string;
   assigned_to?: string | null;
   assigned_to_name?: string | null;
+  assigned_to_avatar_url?: string | null;
 };
 
 const priorityLabels: Record<number, { label: string; color: string }> = {
@@ -34,7 +35,7 @@ export function AdminRequestsView({
   clients: { id: string; name: string }[];
   statuses: RequestStatus[];
   requestTypes: { id: string; name: string }[];
-  teamMembers: { id: string; full_name: string | null; role: string }[];
+  teamMembers: { id: string; full_name: string | null; role: string; avatar_url: string | null }[];
   currentUserId: string;
 }) {
   const [view, setView] = useState<"kanban" | "list">("kanban");
@@ -87,7 +88,12 @@ export function AdminRequestsView({
     setRequests((prev) =>
       prev.map((r) =>
         r.id === requestId
-          ? { ...r, assigned_to: assignedTo || null, assigned_to_name: member?.full_name ?? null }
+          ? {
+              ...r,
+              assigned_to: assignedTo || null,
+              assigned_to_name: member?.full_name ?? null,
+              assigned_to_avatar_url: member?.avatar_url ?? null,
+            }
           : r
       )
     );
@@ -299,6 +305,8 @@ export function AdminRequestsView({
             onStatusChange={handleStatusChange}
             showClientName
             linkPrefix="/admin/requests"
+            teamMembers={teamMembers as KanbanTeamMember[]}
+            onAssign={handleAssign}
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white">

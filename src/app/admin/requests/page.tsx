@@ -26,11 +26,26 @@ export default async function RequestsPage() {
       .order("name"),
     supabase
       .from("profiles")
-      .select("id, full_name, role")
+      .select("id, full_name, role, avatar_path")
       .in("role", ["admin", "member"])
       .order("full_name"),
     supabase.auth.getUser(),
   ]);
+
+  const membersWithAvatars = await Promise.all(
+    (teamMembers ?? []).map(async (m) => {
+      let avatar_url: string | null = null;
+      if (m.avatar_path) {
+        const { data } = await supabase.storage
+          .from("avatars")
+          .createSignedUrl(m.avatar_path, 60 * 60);
+        avatar_url = data?.signedUrl ?? null;
+      }
+      return { id: m.id, full_name: m.full_name, role: m.role, avatar_url };
+    })
+  );
+
+  const avatarMap = new Map(membersWithAvatars.map((m) => [m.id, m.avatar_url]));
 
   const mapped =
     requests?.map((r) => {
@@ -53,6 +68,7 @@ export default async function RequestsPage() {
         type_name: (r.request_types as unknown as { name: string } | null)?.name ?? undefined,
         assigned_to: r.assigned_to,
         assigned_to_name: assignedProfile?.full_name ?? null,
+        assigned_to_avatar_url: r.assigned_to ? avatarMap.get(r.assigned_to) ?? null : null,
       };
     }) ?? [];
 
@@ -62,7 +78,7 @@ export default async function RequestsPage() {
       clients={clients ?? []}
       statuses={statuses ?? []}
       requestTypes={requestTypes ?? []}
-      teamMembers={teamMembers ?? []}
+      teamMembers={membersWithAvatars}
       currentUserId={user?.id ?? ""}
     />
   );
