@@ -50,6 +50,29 @@ function formatDuration(start: string | null, end: string | null) {
   return `${hours}h`;
 }
 
+const clientColors = [
+  { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" },
+  { bg: "bg-violet-50", text: "text-violet-700", dot: "bg-violet-400" },
+  { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-400" },
+  { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400" },
+  { bg: "bg-teal-50", text: "text-teal-700", dot: "bg-teal-400" },
+  { bg: "bg-cyan-50", text: "text-cyan-700", dot: "bg-cyan-400" },
+  { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
+  { bg: "bg-pink-50", text: "text-pink-700", dot: "bg-pink-400" },
+  { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-400" },
+  { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-400" },
+  { bg: "bg-lime-50", text: "text-lime-700", dot: "bg-lime-400" },
+  { bg: "bg-fuchsia-50", text: "text-fuchsia-700", dot: "bg-fuchsia-400" },
+];
+
+function getClientColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return clientColors[Math.abs(hash) % clientColors.length];
+}
+
 function isDueSoon(dueDate: string | null | undefined): "overdue" | "soon" | null {
   if (!dueDate) return null;
   const due = new Date(dueDate);
@@ -69,8 +92,8 @@ function AssigneeAvatar({
   avatarUrl: string | null;
   size?: "sm" | "md";
 }) {
-  const dim = size === "md" ? "h-6 w-6" : "h-4 w-4";
-  const textSize = size === "md" ? "text-[10px]" : "text-[8px]";
+  const dim = size === "md" ? "h-6 w-6" : "h-5 w-5";
+  const textSize = size === "md" ? "text-[10px]" : "text-[9px]";
 
   if (avatarUrl) {
     return (
@@ -296,11 +319,15 @@ export function KanbanBoard({
 
                       {(showClientName && req.client_name || req.type_name || priority > 0) && (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {showClientName && req.client_name && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
-                              {req.client_name}
-                            </span>
-                          )}
+                          {showClientName && req.client_name && (() => {
+                            const cc = getClientColor(req.client_name);
+                            return (
+                              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${cc.bg} ${cc.text}`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${cc.dot}`} />
+                                {req.client_name}
+                              </span>
+                            );
+                          })()}
                           {req.type_name && (
                             <span className="rounded-md bg-purple-50 px-1.5 py-0.5 text-[11px] font-medium text-purple-600">
                               {req.type_name}
